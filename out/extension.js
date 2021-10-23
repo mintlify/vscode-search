@@ -10,30 +10,44 @@ function activate(context) {
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "mintlify" is now active!');
-    // The command has been defined in the package.json file
-    // Now provide the implementation of the command with registerCommand
-    // The commandId parameter must match the command field in package.json
     const find = vscode.commands.registerCommand('mintlify.find', async () => {
         // The code you place here will be executed every time your command is executed
         // Display a message box to the user
-        const root = vscode.workspace.workspaceFolders[0].uri;
-        const filesContent = await traverseFiles(root, []);
-        console.log(filesContent);
-        // Call API to sort through the files and returns results
-        const simulateResult = {
-            path: 'file:///Users/hanwang/Desktop/figstack/backend/src/prompts/explain.ts',
-            start: { line: 10, character: 2 },
-            end: { line: 15, character: 99 },
-        };
-        const { path, start, end } = simulateResult;
-        const filePathUri = vscode.Uri.parse(path);
-        const startPosition = new vscode.Position(start.line, start.character);
-        const endPosition = new vscode.Position(end.line, end.character);
-        const selectedRange = new vscode.Range(startPosition, endPosition);
-        const editor = await vscode.window.showTextDocument(filePathUri, {
-            selection: selectedRange
+        const quickPick = vscode.window.createQuickPick();
+        quickPick.title = "Mint Search";
+        quickPick.placeholder = "What would you like to ask?";
+        quickPick.onDidChangeValue((value) => {
+            let itemResults = [];
+            if (value) {
+                // TODO: Add autocompletes
+                itemResults = [{ label: value, description: "Search entire workspace" }, { label: value, description: "Search this file" }];
+            }
+            return quickPick.items = itemResults;
         });
-        editor.revealRange(selectedRange);
+        quickPick.onDidChangeSelection(async (selectedItems) => {
+            const selected = selectedItems[0];
+            const root = vscode.workspace.workspaceFolders[0].uri;
+            const filesContent = await traverseFiles(root, []);
+            console.log(filesContent);
+            quickPick.value = '';
+            quickPick.items = [{ label: "Results" }];
+        });
+        quickPick.show();
+        // Call API to sort through the files and returns results
+        // const simulateResult: Result = {
+        // 	path: 'file:///Users/hanwang/Desktop/figstack/backend/src/prompts/explain.ts',
+        // 	start: { line: 10, character: 2 },
+        // 	end: { line: 15, character: 99 },
+        // };
+        // const { path, start, end } = simulateResult;
+        // const filePathUri = vscode.Uri.parse(path);
+        // const startPosition = new vscode.Position(start.line, start.character);
+        // const endPosition = new vscode.Position(end.line, end.character);
+        // const selectedRange = new vscode.Range(startPosition, endPosition);
+        // const editor = await vscode.window.showTextDocument(filePathUri, {
+        // 	selection: selectedRange
+        // });
+        // editor.revealRange(selectedRange);
     });
     context.subscriptions.push(find);
 }
