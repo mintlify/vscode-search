@@ -10,14 +10,22 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:mintlify.helloWorld"
+		"onCommand:mintlify.find"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "mintlify.helloWorld",
-				"title": "Hello World"
+				"command": "mintlify.find",
+				"title": "Mint Find"
+			}
+		],
+		"keybindings": [
+			{
+				"key": "ctrl+;",
+				"mac": "cmd+;",
+				"command": "mintlify.find",
+				"when": "editorFocus"
 			}
 		]
 	},

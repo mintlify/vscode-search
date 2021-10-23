@@ -13,14 +13,29 @@ function activate(context) {
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with registerCommand
     // The commandId parameter must match the command field in package.json
-    let disposable = vscode.commands.registerCommand('mintlify.helloWorld', async () => {
+    const find = vscode.commands.registerCommand('mintlify.find', async () => {
         // The code you place here will be executed every time your command is executed
         // Display a message box to the user
         const root = vscode.workspace.workspaceFolders[0].uri;
         const filesContent = await traverseFiles(root, []);
         console.log(filesContent);
+        // Call API to sort through the files and returns results
+        const simulateResult = {
+            path: 'file:///Users/hanwang/Desktop/figstack/backend/src/prompts/explain.ts',
+            start: { line: 10, character: 2 },
+            end: { line: 15, character: 99 },
+        };
+        const { path, start, end } = simulateResult;
+        const filePathUri = vscode.Uri.parse(path);
+        const startPosition = new vscode.Position(start.line, start.character);
+        const endPosition = new vscode.Position(end.line, end.character);
+        const selectedRange = new vscode.Range(startPosition, endPosition);
+        const editor = await vscode.window.showTextDocument(filePathUri, {
+            selection: selectedRange
+        });
+        editor.revealRange(selectedRange);
     });
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(find);
 }
 exports.activate = activate;
 async function traverseFiles(root, filesContent) {
