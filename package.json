@@ -10,21 +10,21 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:mintlify.find"
+		"onCommand:mintlify.search"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "mintlify.find",
-				"title": "Mint Find"
+				"command": "mintlify.search",
+				"title": "Mint Search"
 			}
 		],
 		"keybindings": [
 			{
 				"key": "ctrl+;",
 				"mac": "cmd+;",
-				"command": "mintlify.find",
+				"command": "mintlify.search",
 				"when": "editorFocus"
 			}
 		]
@@ -49,5 +49,8 @@
 		"mocha": "^9.1.1",
 		"typescript": "^4.4.3",
 		"@vscode/test-electron": "^1.6.2"
+	},
+	"dependencies": {
+		"axios": "^0.24.0"
 	}
 }

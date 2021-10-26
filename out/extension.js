@@ -1,16 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require("vscode");
+const axios_1 = require("axios");
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 function activate(context) {
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "mintlify" is now active!');
-    const find = vscode.commands.registerCommand('mintlify.find', async () => {
+    const find = vscode.commands.registerCommand('mintlify.search', async () => {
         // The code you place here will be executed every time your command is executed
         // Display a message box to the user
         const quickPick = vscode.window.createQuickPick();
@@ -27,8 +26,12 @@ function activate(context) {
         quickPick.onDidChangeSelection(async (selectedItems) => {
             const selected = selectedItems[0];
             const root = vscode.workspace.workspaceFolders[0].uri;
-            const filesContent = await traverseFiles(root, []);
-            console.log(filesContent);
+            const files = await traverseFiles(root, []);
+            const searchRes = await axios_1.default.post('http://localhost:5000/search/results', {
+                files,
+                search: selected.label
+            });
+            console.log(searchRes.data);
             quickPick.value = '';
             quickPick.items = [{ label: "Results" }];
         });
@@ -60,7 +63,7 @@ async function traverseFiles(root, filesContent) {
             const filePath = `${root}/${file[0]}`;
             const readFileUri = vscode.Uri.parse(filePath);
             const readFileRaw = await vscode.workspace.fs.readFile(readFileUri);
-            const readFileContent = { path: filePath, content: readFileRaw.toString() };
+            const readFileContent = { path: filePath, filename: file[0], content: readFileRaw.toString() };
             filesContent.push(readFileContent);
         }
         else if (file[1] === 2 && isTraversablePath(file[0])) {
