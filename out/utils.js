@@ -26,6 +26,7 @@ function isTraversablePath(folderName) {
     const nonTraversable = {
         "node_modules": true,
         ".git": true,
+        "build": true,
     };
     return !nonTraversable[folderName];
 }

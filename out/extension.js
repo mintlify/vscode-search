@@ -36,6 +36,9 @@ function activate(context) {
             const searchRes = await axios_1.default.post('http://localhost:5000/search/results', {
                 files,
                 search,
+            }, {
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity,
             });
             const searchResults = searchRes.data.results;
             const resultItems = searchResults.map((result) => {
@@ -111,6 +114,9 @@ function activate(context) {
             const searchRes = await axios_1.default.post('http://localhost:5000/ask/answer', {
                 files,
                 question,
+            }, {
+                maxContentLength: Infinity,
+                maxBodyLength: Infinity,
             });
             const answer = searchRes.data.answer;
             quickPick.hide();

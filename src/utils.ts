@@ -30,6 +30,7 @@ function isTraversablePath(folderName: string): boolean {
 	const nonTraversable: Record<string, boolean> = {
 		"node_modules": true,
 		".git": true,
+		"build": true,
 	};
 
 	return !nonTraversable[folderName];

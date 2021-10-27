@@ -48,6 +48,9 @@ export function activate(context: vscode.ExtensionContext) {
 			const searchRes = await axios.post('http://localhost:5000/search/results', {
 				files,
 				search,
+			}, {
+				maxContentLength: Infinity,
+    		maxBodyLength: Infinity,
 			});
 
 			const searchResults: SearchResult[] = searchRes.data.results;
@@ -134,6 +137,9 @@ export function activate(context: vscode.ExtensionContext) {
 			const searchRes = await axios.post('http://localhost:5000/ask/answer', {
 				files,
 				question,
+			}, {
+				maxContentLength: Infinity,
+    		maxBodyLength: Infinity,
 			});
 
 			const answer = searchRes.data.answer;
