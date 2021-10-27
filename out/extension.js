@@ -3,18 +3,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
 const axios_1 = require("axios");
+const utils_1 = require("./utils");
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 function activate(context) {
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "mintlify" is now active!');
-    const find = vscode.commands.registerCommand('mintlify.search', async () => {
+    const search = vscode.commands.registerCommand('mintlify.search', async () => {
         // The code you place here will be executed every time your command is executed
         // Display a message box to the user
         const quickPick = vscode.window.createQuickPick();
         quickPick.title = "Mint Search";
-        quickPick.placeholder = "What would you like to ask?";
+        quickPick.placeholder = "What would you like to find?";
+        quickPick.show();
         quickPick.onDidChangeValue((value) => {
             let itemResults = [];
             if (value) {
@@ -30,7 +32,7 @@ function activate(context) {
                 return null;
             }
             const root = vscode.workspace.workspaceFolders[0].uri;
-            const files = await traverseFiles(root, []);
+            const files = await (0, utils_1.traverseFiles)(root, []);
             const searchRes = await axios_1.default.post('http://localhost:5000/search/results', {
                 files,
                 search,
@@ -49,6 +51,7 @@ function activate(context) {
             resultsPick.placeholder = search;
             resultsPick.matchOnDescription = true;
             resultsPick.matchOnDetail = true;
+            resultsPick.show();
             resultsPick.onDidChangeActive(async (activeItems) => {
                 const item = activeItems[0];
                 const itemContext = searchResults.find((result) => result.content === item.label);
@@ -80,40 +83,47 @@ function activate(context) {
                     selection: selectedRange,
                 });
             });
-            resultsPick.show();
         });
-        quickPick.show();
-        // Call API to sort through the files and returns results
     });
-    context.subscriptions.push(find);
+    const ask = vscode.commands.registerCommand('mintlify.ask', async () => {
+        // The code you place here will be executed every time your command is executed
+        // Display a message box to the user
+        const quickPick = vscode.window.createQuickPick();
+        quickPick.title = "Mint Ask";
+        quickPick.placeholder = "What would you like to know?";
+        quickPick.show();
+        quickPick.onDidChangeValue((value) => {
+            let itemResults = [];
+            if (value) {
+                // TODO: Add autocompletes
+                itemResults = [{ label: value, description: "Search entire workspace" }, { label: value, description: "Search this file" }];
+            }
+            return quickPick.items = itemResults;
+        });
+        quickPick.onDidChangeSelection(async (selectedItems) => {
+            const selected = selectedItems[0];
+            const question = selected?.label;
+            if (!question) {
+                return null;
+            }
+            const root = vscode.workspace.workspaceFolders[0].uri;
+            const files = await (0, utils_1.traverseFiles)(root, []);
+            const searchRes = await axios_1.default.post('http://localhost:5000/ask/answer', {
+                files,
+                question,
+            });
+            const answer = searchRes.data.answer;
+            quickPick.hide();
+            const answerPick = vscode.window.createQuickPick();
+            answerPick.items = [{ label: answer }];
+            answerPick.title = "Mint Answer Results";
+            answerPick.placeholder = question;
+            answerPick.show();
+        });
+    });
+    context.subscriptions.push(search, ask);
 }
 exports.activate = activate;
-async function traverseFiles(root, filesContent) {
-    const files = await vscode.workspace.fs.readDirectory(root);
-    const filePromises = files.map(async (file, i) => {
-        // If filetype is a file
-        if (file[1] === 1) {
-            const filePath = `${root}/${file[0]}`;
-            const readFileUri = vscode.Uri.parse(filePath);
-            const readFileRaw = await vscode.workspace.fs.readFile(readFileUri);
-            const readFileContent = { path: filePath, filename: file[0], content: readFileRaw.toString() };
-            filesContent.push(readFileContent);
-        }
-        else if (file[1] === 2 && isTraversablePath(file[0])) {
-            const newRoot = vscode.Uri.parse(`${root}/${file[0]}`);
-            await traverseFiles(newRoot, filesContent);
-        }
-    });
-    await Promise.all(filePromises);
-    return filesContent;
-}
-function isTraversablePath(folderName) {
-    const nonTraversable = {
-        "node_modules": true,
-        ".git": true,
-    };
-    return !nonTraversable[folderName];
-}
 // this method is called when your extension is deactivated
 function deactivate() { }
 exports.deactivate = deactivate;

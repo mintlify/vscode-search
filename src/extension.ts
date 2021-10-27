@@ -1,11 +1,6 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
-
-type File = {
-	path: string;
-	filename: string;
-	content: string;
-};
+import { traverseFiles } from './utils';
 
 type SearchResult = {
 	path: string;
@@ -23,13 +18,14 @@ export function activate(context: vscode.ExtensionContext) {
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "mintlify" is now active!');
 
-	const find = vscode.commands.registerCommand('mintlify.search', async () => {
+	const search = vscode.commands.registerCommand('mintlify.search', async () => {
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
 
 		const quickPick = vscode.window.createQuickPick();
 		quickPick.title = "Mint Search";
-		quickPick.placeholder = "What would you like to ask?";
+		quickPick.placeholder = "What would you like to find?";
+		quickPick.show();
 		quickPick.onDidChangeValue((value) => {
 			let itemResults: vscode.QuickPickItem[] = [];
 			if (value) {
@@ -70,6 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
 			resultsPick.placeholder = search;
 			resultsPick.matchOnDescription = true;
 			resultsPick.matchOnDetail = true;
+			resultsPick.show();
 
 			resultsPick.onDidChangeActive(async (activeItems) => {
 				const item = activeItems[0];
@@ -104,44 +101,53 @@ export function activate(context: vscode.ExtensionContext) {
 					selection: selectedRange,
 				});
 			});
-
-			resultsPick.show();
 		});
+	});
+
+	const ask = vscode.commands.registerCommand('mintlify.ask', async () => {
+		// The code you place here will be executed every time your command is executed
+		// Display a message box to the user
+
+		const quickPick = vscode.window.createQuickPick();
+		quickPick.title = "Mint Ask";
+		quickPick.placeholder = "What would you like to know?";
 		quickPick.show();
+		quickPick.onDidChangeValue((value) => {
+			let itemResults: vscode.QuickPickItem[] = [];
+			if (value) {
+				// TODO: Add autocompletes
+				itemResults = [{label: value, description: "Search entire workspace" }, {label: value, description: "Search this file" }];
+			}
 
-		// Call API to sort through the files and returns results
+			return quickPick.items = itemResults;
+
+		});
+		quickPick.onDidChangeSelection(async (selectedItems) => {
+			const selected = selectedItems[0];
+
+			const question = selected?.label;
+			if (!question) {return null;}
+
+			const root = vscode.workspace.workspaceFolders![0]!.uri;
+			const files = await traverseFiles(root, []);
+
+			const searchRes = await axios.post('http://localhost:5000/ask/answer', {
+				files,
+				question,
+			});
+
+			const answer = searchRes.data.answer;
+			quickPick.hide();
+
+			const answerPick = vscode.window.createQuickPick();
+			answerPick.items = [{ label: answer }];
+			answerPick.title = "Mint Answer Results";
+			answerPick.placeholder = question;
+			answerPick.show();
+		});
 	});
 
-	context.subscriptions.push(find);
-}
-
-async function traverseFiles(root: vscode.Uri, filesContent: File[]): Promise<File[]> {
-	const files = await vscode.workspace.fs.readDirectory(root);
-	const filePromises = files.map(async (file, i) => {
-		// If filetype is a file
-		if (file[1] === 1) {
-			const filePath = `${root}/${file[0]}`;
-			const readFileUri = vscode.Uri.parse(filePath);
-			const readFileRaw = await vscode.workspace.fs.readFile(readFileUri);
-			const readFileContent = { path: filePath, filename: file[0], content: readFileRaw.toString()};
-			filesContent.push(readFileContent);
-		} else if (file[1] === 2 && isTraversablePath(file[0])) {
-			const newRoot = vscode.Uri.parse(`${root}/${file[0]}`);
-			await traverseFiles(newRoot, filesContent);
-		}
-
-	});
-	await Promise.all(filePromises);
-	return filesContent;
-}
-
-function isTraversablePath(folderName: string): boolean {
-	const nonTraversable: Record<string, boolean> = {
-		"node_modules": true,
-		".git": true,
-	};
-
-	return !nonTraversable[folderName];
+	context.subscriptions.push(search, ask);
 }
 
 // this method is called when your extension is deactivated
