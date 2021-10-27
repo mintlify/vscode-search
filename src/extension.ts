@@ -9,8 +9,10 @@ type File = {
 
 type SearchResult = {
 	path: string;
-	startLine: number;
-	endLine: number;
+	filename: string;
+	content: string;
+	lineStart: number;
+	lineEnd: number;
 };
 
 // this method is called when your extension is activated
@@ -41,39 +43,73 @@ export function activate(context: vscode.ExtensionContext) {
 		quickPick.onDidChangeSelection(async (selectedItems) => {
 			const selected = selectedItems[0];
 
+			const search = selected?.label;
+			if (!search) {return null;}
+
 			const root = vscode.workspace.workspaceFolders![0]!.uri;
 			const files = await traverseFiles(root, []);
 
 			const searchRes = await axios.post('http://localhost:5000/search/results', {
 				files,
-				search: selected.label
+				search,
 			});
 
-			console.log(searchRes.data);
+			const searchResults: SearchResult[] = searchRes.data.results;
+			const resultItems = searchResults.map((result) => {
+				return {
+					label: result.content,
+					detail: result.filename
+				};
+			});
 			
-			quickPick.value = '';
-			quickPick.items = [{ label: "Results" }];
+			quickPick.hide();
+
+			const resultsPick = vscode.window.createQuickPick();
+			resultsPick.items = resultItems;
+			resultsPick.title = "Mint Search Results";
+			resultsPick.placeholder = search;
+			resultsPick.matchOnDescription = true;
+			resultsPick.matchOnDetail = true;
+
+			resultsPick.onDidChangeActive(async (activeItems) => {
+				const item = activeItems[0];
+				const itemContext = searchResults.find((result) => result.content === item.label);
+
+				if (!itemContext) {return null;}
+
+				const { path, lineStart, lineEnd } = itemContext;
+				const filePathUri = vscode.Uri.parse(path);
+				const startPosition = new vscode.Position(lineStart, 0);
+				const endPosition = new vscode.Position(lineEnd, 9999);
+				const selectedRange = new vscode.Range(startPosition, endPosition);
+
+				await vscode.window.showTextDocument(filePathUri, {
+					selection: selectedRange,
+					preserveFocus: true,
+				});
+			});
+
+			resultsPick.onDidChangeSelection(async (selectedItems) => {
+				const item = selectedItems[0];
+				const itemContext = searchResults.find((result) => result.content === item.label);
+
+				if (!itemContext) {return null;}
+
+				const { path, lineStart, lineEnd } = itemContext;
+				const filePathUri = vscode.Uri.parse(path);
+				const startPosition = new vscode.Position(lineStart, 0);
+				const endPosition = new vscode.Position(lineEnd, 9999);
+				const selectedRange = new vscode.Range(startPosition, endPosition);
+				await vscode.window.showTextDocument(filePathUri, {
+					selection: selectedRange,
+				});
+			});
+
+			resultsPick.show();
 		});
 		quickPick.show();
 
 		// Call API to sort through the files and returns results
-		// const simulateResult: Result = {
-		// 	path: 'file:///Users/hanwang/Desktop/figstack/backend/src/prompts/explain.ts',
-		// 	start: { line: 10, character: 2 },
-		// 	end: { line: 15, character: 99 },
-		// };
-
-		// const { path, start, end } = simulateResult;
-
-		// const filePathUri = vscode.Uri.parse(path);
-		// const startPosition = new vscode.Position(start.line, start.character);
-		// const endPosition = new vscode.Position(end.line, end.character);
-		// const selectedRange = new vscode.Range(startPosition, endPosition);
-
-		// const editor = await vscode.window.showTextDocument(filePathUri, {
-		// 	selection: selectedRange
-		// });
-		// editor.revealRange(selectedRange);
 	});
 
 	context.subscriptions.push(find);
