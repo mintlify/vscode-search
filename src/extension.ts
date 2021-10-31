@@ -26,11 +26,60 @@ export function activate(context: vscode.ExtensionContext) {
 		quickPick.title = "Mint Search";
 		quickPick.placeholder = "What would you like to find?";
 		quickPick.show();
-		quickPick.onDidChangeValue((value) => {
+
+		const autoCompleteResponses: { [key: string]: string[] } = {
+			'Wh': ['What functions are in utility.js?', 'Where are we initializing Mongoose?', 'What is AuthToken?'],
+			'Whe': ['Where are we initializing Mongoose?', 'Where is activate() function?', 'Where is searchResults returned?'],
+			'Where ': ['Where are we initializing Mongoose?', 'Where is activate() function?', 'Where is searchResults returned?'],
+			'Where a': ['Where are we initializing Mongoose?', 'Where at utils?', 'Where are we creating a user token?'],
+			'Where ar': ['Where are we initializing Mongoose?', 'Where are user tokens used?', 'Where are subscriptions created'],
+			'Where are w': ['Where are we initializing Mongoose?', 'Where are we creating subscriptions?', 'Where are we supporting test cases?'],
+			'Where are we c': ['Where are we creating subscriptions?', 'Where are we casting variables?', 'Where are we cancelling subscriptions'],
+			'Where are we ca': ['Where are we casting variables?', 'Where are we cancelling subscriptions', 'Where are we cancelling listeners?'],
+			'Where are we can': ['Where are we cancelling subscriptions', 'Where are we cancelling listeners?', 'Where are we cancelling the stripe subscription?'],
+			'Where are we cancelling t': ['Where are we cancelling the stripe subscription?'],
+			'Where are we cancelling the stripe subscription?': [],
+			'Where are we cr': ['Where are we creating subscriptions?', 'Where are we creating express instance?', 'Where are we creating the Payment type?'],
+			'Where are we creating c': ['Where are we creating checkouts?'],
+			'Where are we creating checkout sessions?': [],
+			'Where i': ['Where instance user data?', 'Where in src are we storing helpers?', 'Where is the signIn function?'],
+			'Where is': ['Where is the signIn function?', 'Where is class UserData defined?'],
+			'Where is t': ['Where is the signIn function?', 'Where is the body css attribute?', 'Where is tsconfig.json'],
+			'Where is th': ['Where is the signIn function?', 'Where is the body css attribute?'],
+			'Where is the h': [],
+			'Where is the head of the main dashboard page': [],
+			'Wha': ['What is express?', 'What can morgan do?', 'What is the header CSS class?'],
+			'What i': ['What is express?', 'What is the header CSS class?', 'What is the function getSectionedWebPageContent doing?'],
+			'What is e': ['What is express?', 'What is express.Router?'],
+			'What is express.': ['What is express.Router?'],
+			'What is express.Router ': [],
+			'What is express.Router doing?': [],
+			'What d': ['What does express.listen do?', 'What do axios requests return?', 'What does sessionId track?'],
+			'What doe': ['What does express.listen do?', 'What does sessionId track?', 'What does AuthToken.findOne do?'],
+			'What does A': ['What does AuthToken store?', 'What does AuthToken.findOne do?'],
+			'What does AuthToken.': ['What does AuthToken.findOne do?'],
+			'What does AuthToken.findOne do?': [],
+			'G': ['Get the body section in index.html', 'Get the css class for h1', 'Get an await async use case'],
+			'Get t': ['Get the body section in index.html', 'Get the css class for h1', 'Get the css class for body'],
+			'Get the q': ['Get the quickstart section', 'Get the quicksort implementation'],
+			'Get the quicks': ['Get the quicksort function'],
+			'Get the quicksort implementation in Python': [],
+		};
+		let lastActiveAutocomplete: string[] = [];
+
+		quickPick.onDidChangeValue((value: string) => {
 			let itemResults: vscode.QuickPickItem[] = [];
 			if (value) {
-				// TODO: Add autocompletes
-				itemResults = [{label: value, description: "Search entire workspace" }, {label: value, description: "Search this file" }];
+				if (autoCompleteResponses[value]) {
+					lastActiveAutocomplete = autoCompleteResponses[value];
+				}
+				// TODO: Add dynamic autocompletes
+				const autoComplete: vscode.QuickPickItem[] = lastActiveAutocomplete.map((auto) => {
+					return {
+						label: auto
+					};
+				 });
+				itemResults = [{label: value, description: "Search entire workspace" }, {label: value, description: "Search this file" }, ...autoComplete];
 			}
 
 			return quickPick.items = itemResults;
@@ -41,6 +90,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 			const search = selected?.label;
 			if (!search) {return null;}
+
+			quickPick.value = search;
 
 			const root = vscode.workspace.workspaceFolders![0]!.uri;
 			const files = await traverseFiles(root, []);
