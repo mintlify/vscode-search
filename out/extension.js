@@ -3,9 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
 const axios_1 = require("axios");
+const url_1 = require("url");
 const utils_1 = require("./utils");
+const auth_1 = require("./auth");
 const ENTIRE_WORKSPACE_OPTION = 'Search entire workspace';
 const THIS_FILE_OPTION = 'Search this file';
+const SIGN_IN_BUTTON = 'Sign in';
 const getFiles = async (option) => {
     if (option === ENTIRE_WORKSPACE_OPTION) {
         const root = vscode.workspace.workspaceFolders[0].uri;
@@ -39,6 +42,21 @@ const getOptionShort = (option) => {
     }
 };
 function activate(context) {
+    vscode.window.registerUriHandler({
+        async handleUri(uri) {
+            if (uri.path === '/auth') {
+                const query = new url_1.URLSearchParams(uri.query);
+                const code = query.get('code');
+                console.log({ code });
+            }
+        }
+    });
+    vscode.window.showInformationMessage('🌿 Sign in to use Mintlify search', SIGN_IN_BUTTON)
+        .then((selectedValue) => {
+        if (selectedValue === SIGN_IN_BUTTON) {
+            vscode.env.openExternal(vscode.Uri.parse(auth_1.LOGIN_URI));
+        }
+    });
     const search = vscode.commands.registerCommand('mintlify.search', async () => {
         const quickPick = vscode.window.createQuickPick();
         quickPick.title = "Mint Search";
