@@ -40,7 +40,7 @@ function activate(context) {
     };
     const { accessToken } = getTokens();
     if (!accessToken) {
-        return showLoginMessage();
+        showLoginMessage();
     }
     const search = vscode.commands.registerCommand('mintlify.search', async () => {
         const quickPick = vscode.window.createQuickPick();
@@ -140,6 +140,9 @@ function activate(context) {
                             if (userActionOnError === utils_1.REQUEST_ACCESS_BUTTON) {
                                 vscode.env.openExternal(vscode.Uri.parse(utils_1.REQUEST_ACCESS_URI));
                             }
+                            else if (userActionOnError === utils_1.LOGOUT_BUTTON) {
+                                vscode.commands.executeCommand('mintlify.logout');
+                            }
                         }
                     }
                 });
@@ -193,6 +196,9 @@ function activate(context) {
             });
         });
     });
+    const logout = vscode.commands.registerCommand('mintlify.logout', async () => {
+        vscode.env.openExternal(vscode.Uri.parse(auth_1.LOGOUT_URI));
+    });
     vscode.window.registerUriHandler({
         async handleUri(uri) {
             if (uri.path === '/auth') {
@@ -207,9 +213,14 @@ function activate(context) {
                     console.log({ error });
                 }
             }
+            else if (uri.path === '/logout') {
+                storageManager.setValue('accessToken', null);
+                storageManager.setValue('refreshToken', null);
+                showLoginMessage();
+            }
         }
     });
-    context.subscriptions.push(search, ask);
+    context.subscriptions.push(search, ask, logout);
 }
 exports.activate = activate;
 // this method is called when your extension is deactivated

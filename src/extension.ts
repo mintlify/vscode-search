@@ -4,7 +4,7 @@ import { URLSearchParams } from 'url';
 import { getFiles, getOptionShort, ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, SIGN_IN_BUTTON, REQUEST_ACCESS_BUTTON,
 	REQUEST_ACCESS_URI, LOGOUT_BUTTON } from './utils';
-import { LOGIN_URI } from './auth';
+import { LOGIN_URI, LOGOUT_URI } from './auth';
 
 type SearchResult = {
 	path: string;
@@ -58,7 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const { accessToken } = getTokens();
 	if (!accessToken) {
-		return showLoginMessage();
+		showLoginMessage();
 	}
 
 	const search = vscode.commands.registerCommand('mintlify.search', async () => {
@@ -176,6 +176,9 @@ export function activate(context: vscode.ExtensionContext) {
 							if (userActionOnError === REQUEST_ACCESS_BUTTON) {
 								vscode.env.openExternal(vscode.Uri.parse(REQUEST_ACCESS_URI));
 							}
+							else if (userActionOnError === LOGOUT_BUTTON) {
+								vscode.commands.executeCommand('mintlify.logout');
+							}
 						}
 					}
 				});
@@ -241,6 +244,10 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
+	const logout = vscode.commands.registerCommand('mintlify.logout', async () => {
+		vscode.env.openExternal(vscode.Uri.parse(LOGOUT_URI));
+	});
+
 	vscode.window.registerUriHandler({
     async handleUri(uri: vscode.Uri) {
       if (uri.path === '/auth') {
@@ -254,11 +261,15 @@ export function activate(context: vscode.ExtensionContext) {
 				} catch (error) {
 					console.log({error});
 				}
-      }
+      } else if (uri.path === '/logout') {
+				storageManager.setValue('accessToken', null);
+        storageManager.setValue('refreshToken', null);
+				showLoginMessage();
+			}
     }
   });
 
-	context.subscriptions.push(search, ask);
+	context.subscriptions.push(search, ask, logout);
 }
 
 // this method is called when your extension is deactivated

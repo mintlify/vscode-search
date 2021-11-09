@@ -13,7 +13,8 @@
 	"activationEvents": [
 		"onStartupFinished",
 		"onCommand:mintlify.search",
-		"onCommand:mintlify.ask"
+		"onCommand:mintlify.ask",
+		"onCommand:mintlify.logout"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -25,6 +26,10 @@
 			{
 				"command": "mintlify.ask",
 				"title": "Mint Ask"
+			},
+			{
+				"command": "mintlify.logout",
+				"title": "Logout of Mintlify"
 			}
 		],
 		"keybindings": [
