@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
 import { URLSearchParams } from 'url';
-import { traverseFiles, File } from './utils';
+import { getFiles, getOptionShort, ENTIRE_WORKSPACE_OPTION,
+	THIS_FILE_OPTION, SIGN_IN_BUTTON, REQUEST_ACCESS_BUTTON,
+	REQUEST_ACCESS_URI, LOGOUT_BUTTON } from './utils';
 import { LOGIN_URI } from './auth';
 
 type SearchResult = {
@@ -12,68 +14,52 @@ type SearchResult = {
 	lineEnd: number;
 };
 
-const ENTIRE_WORKSPACE_OPTION = 'Search entire workspace';
-const THIS_FILE_OPTION = 'Search this file';
-
-const SIGN_IN_BUTTON = 'Sign in';
-
-const getFiles = async (option: string): Promise<File[]> => {
-	if (option === ENTIRE_WORKSPACE_OPTION) {
-		const root = vscode.workspace.workspaceFolders![0].uri;
-		const files = await traverseFiles(root, []);
-		return files;
-	}
-
-	else if (option === THIS_FILE_OPTION) {
-		const document = vscode.window.activeTextEditor?.document;
-		if (document === undefined) {
-			return [];
-		}
-
-		const { fileName } = document;
-		const fileNamePath = fileName.split('/');
-
-		const file = {
-			path: document.uri.toString(),
-			filename: fileNamePath[fileNamePath.length - 1],
-			content: document.getText(),
-		};
-		return [file];
-	}
-
-	return [];
+type Tokens = {
+	accessToken: string | null;
+	refreshToken: string | null;
 };
 
-const getOptionShort = (option: string): string => {
-	switch (option) {
-		case ENTIRE_WORKSPACE_OPTION:
-			return 'the workspace';
-		case THIS_FILE_OPTION:
-			return 'this file';
-		default:
-			return '';
-	}
-};
+class LocalStorageService {
+  constructor(private storage: vscode.Memento) {}
+	
+  public getValue(key: string) {
+    return this.storage.get(key, null);
+  }
 
-export function activate(context: vscode.ExtensionContext) {
+  public setValue(key: string, value: string | null) {
+    this.storage.update(key, value);
+  }
+}
 
-	vscode.window.registerUriHandler({
-    async handleUri(uri: vscode.Uri) {
-      if (uri.path === '/auth') {
-        const query = new URLSearchParams(uri.query);
-
-				const code = query.get('code');
-				console.log({code});
-      }
-    }
-  });
-
+const showLoginMessage = () => {
 	vscode.window.showInformationMessage('🌿 Sign in to use Mintlify search', SIGN_IN_BUTTON)
 		.then((selectedValue) => {
 			if (selectedValue === SIGN_IN_BUTTON) {
 				vscode.env.openExternal(vscode.Uri.parse(LOGIN_URI));
 			}
 		});
+};
+
+export function activate(context: vscode.ExtensionContext) {
+	// Set storage manager for auth tokens
+	const storageManager = new LocalStorageService(context.globalState);
+
+	const getTokens = (): Tokens => {
+		return {
+			accessToken: storageManager.getValue('accessToken'),
+			refreshToken: storageManager.getValue('refreshToken')
+		};
+	};
+
+	const setTokens = ({accessToken, refreshToken}: Tokens): void => {
+		storageManager.setValue('accessToken', accessToken);
+		storageManager.setValue('refreshToken', refreshToken);
+	};
+
+	const { accessToken } = getTokens();
+	if (!accessToken) {
+		return showLoginMessage();
+	}
 
 	const search = vscode.commands.registerCommand('mintlify.search', async () => {
 		const quickPick = vscode.window.createQuickPick();
@@ -101,74 +87,97 @@ export function activate(context: vscode.ExtensionContext) {
 			quickPick.value = search;
 			const optionShort = getOptionShort(option);
 
+			const { accessToken, refreshToken } = getTokens();
+			if (!accessToken) {
+				return showLoginMessage();
+			}
+
 			vscode.window.withProgress({
 				location: vscode.ProgressLocation.Notification,
 				title: `🔎 Mint searching across ${optionShort}`,
 			},
 			() => {
-				return new Promise(async (resolve) => {
-					const files = await getFiles(option);
-					const searchRes = await axios.post('http://localhost:5000/search/results', {
-						files,
-						search,
-					}, {
-						maxContentLength: Infinity,
-						maxBodyLength: Infinity,
-					});
-
-					const searchResults: SearchResult[] = searchRes.data.results;
-					const resultItems = searchResults.map((result) => {
-						return {
-							label: result.content,
-							detail: result.filename
-						};
-					});
-					
-					quickPick.hide();
-
-					const resultsPick = vscode.window.createQuickPick();
-					resultsPick.items = resultItems;
-					resultsPick.title = "Mint Search Results";
-					resultsPick.placeholder = search;
-					resultsPick.matchOnDescription = true;
-					resultsPick.matchOnDetail = true;
-					resultsPick.show();
-
-					resultsPick.onDidChangeActive(async (activeItems) => {
-						const item = activeItems[0];
-						const itemContext = searchResults.find((result) => result.content === item.label);
-
-						if (!itemContext) {return null;}
-
-						const { path, lineStart, lineEnd } = itemContext;
-						const filePathUri = vscode.Uri.parse(path);
-						const startPosition = new vscode.Position(lineStart, 0);
-						const endPosition = new vscode.Position(lineEnd, 9999);
-						const selectedRange = new vscode.Range(startPosition, endPosition);
-
-						await vscode.window.showTextDocument(filePathUri, {
-							selection: selectedRange,
-							preserveFocus: true,
+				return new Promise(async (resolve, reject) => {
+					try {
+						const files = await getFiles(option);
+						const searchRes: { data: { results: SearchResult[] } } = await axios.post('http://localhost:5000/search/results', {
+							files,
+							search,
+							accessToken,
+							refreshToken
+						}, {
+							maxContentLength: Infinity,
+							maxBodyLength: Infinity,
 						});
-					});
 
-					resultsPick.onDidChangeSelection(async (selectedItems) => {
-						const item = selectedItems[0];
-						const itemContext = searchResults.find((result) => result.content === item.label);
-
-						if (!itemContext) {return null;}
-
-						const { path, lineStart, lineEnd } = itemContext;
-						const filePathUri = vscode.Uri.parse(path);
-						const startPosition = new vscode.Position(lineStart, 0);
-						const endPosition = new vscode.Position(lineEnd, 9999);
-						const selectedRange = new vscode.Range(startPosition, endPosition);
-						await vscode.window.showTextDocument(filePathUri, {
-							selection: selectedRange,
+						const searchResults = searchRes.data.results;
+						const resultItems = searchResults.map((result) => {
+							return {
+								label: result.content,
+								detail: result.filename
+							};
 						});
-					});
+						
+						quickPick.hide();
 
-					resolve('Completed search');
+						const resultsPick = vscode.window.createQuickPick();
+						resultsPick.items = resultItems;
+						resultsPick.title = "Mint Search Results";
+						resultsPick.placeholder = search;
+						resultsPick.matchOnDescription = true;
+						resultsPick.matchOnDetail = true;
+						resultsPick.show();
+
+						resultsPick.onDidChangeActive(async (activeItems) => {
+							const item = activeItems[0];
+							const itemContext = searchResults.find((result) => result.content === item.label);
+
+							if (!itemContext) {return null;}
+
+							const { path, lineStart, lineEnd } = itemContext;
+							const filePathUri = vscode.Uri.parse(path);
+							const startPosition = new vscode.Position(lineStart, 0);
+							const endPosition = new vscode.Position(lineEnd, 9999);
+							const selectedRange = new vscode.Range(startPosition, endPosition);
+
+							await vscode.window.showTextDocument(filePathUri, {
+								selection: selectedRange,
+								preserveFocus: true,
+							});
+						});
+
+						resultsPick.onDidChangeSelection(async (selectedItems) => {
+							const item = selectedItems[0];
+							const itemContext = searchResults.find((result) => result.content === item.label);
+
+							if (!itemContext) {return null;}
+
+							const { path, lineStart, lineEnd } = itemContext;
+							const filePathUri = vscode.Uri.parse(path);
+							const startPosition = new vscode.Position(lineStart, 0);
+							const endPosition = new vscode.Position(lineEnd, 9999);
+							const selectedRange = new vscode.Range(startPosition, endPosition);
+							await vscode.window.showTextDocument(filePathUri, {
+								selection: selectedRange,
+							});
+						});
+
+						resolve('Completed search');
+					} catch (error: any) {
+						reject('Failed');
+						const backendError = error?.response?.data;
+						if (backendError) {
+							const { shouldPromptWaitlist } = backendError;
+							const userActionOnError = await vscode.window.showErrorMessage(
+								backendError.error,
+								shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
+								shouldPromptWaitlist && LOGOUT_BUTTON,
+							);
+							if (userActionOnError === REQUEST_ACCESS_BUTTON) {
+								vscode.env.openExternal(vscode.Uri.parse(REQUEST_ACCESS_URI));
+							}
+						}
+					}
 				});
 			}
 			);
@@ -231,6 +240,23 @@ export function activate(context: vscode.ExtensionContext) {
 			});
 		});
 	});
+
+	vscode.window.registerUriHandler({
+    async handleUri(uri: vscode.Uri) {
+      if (uri.path === '/auth') {
+        const query = new URLSearchParams(uri.query);
+
+				const code = query.get('code');
+				try {
+					const authResponse = await axios.post('http://localhost:5000/user/code', {code});
+					const tokens = authResponse.data;
+					setTokens(tokens);
+				} catch (error) {
+					console.log({error});
+				}
+      }
+    }
+  });
 
 	context.subscriptions.push(search, ask);
 }
