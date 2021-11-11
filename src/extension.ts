@@ -14,11 +14,6 @@ type SearchResult = {
 	lineEnd: number;
 };
 
-type Tokens = {
-	accessToken: string | null;
-	refreshToken: string | null;
-};
-
 class LocalStorageService {
   constructor(private storage: vscode.Memento) {}
 	
@@ -44,20 +39,8 @@ export function activate(context: vscode.ExtensionContext) {
 	// Set storage manager for auth tokens
 	const storageManager = new LocalStorageService(context.globalState);
 
-	const getTokens = (): Tokens => {
-		return {
-			accessToken: storageManager.getValue('accessToken'),
-			refreshToken: storageManager.getValue('refreshToken')
-		};
-	};
-
-	const setTokens = ({accessToken, refreshToken}: Tokens): void => {
-		storageManager.setValue('accessToken', accessToken);
-		storageManager.setValue('refreshToken', refreshToken);
-	};
-
-	const { accessToken } = getTokens();
-	if (!accessToken) {
+	const authToken = storageManager.getValue('authToken');
+	if (!authToken) {
 		showLoginMessage();
 	}
 
@@ -66,15 +49,48 @@ export function activate(context: vscode.ExtensionContext) {
 		quickPick.title = "Mint Search";
 		quickPick.placeholder = "What would you like to find?";
 		quickPick.show();
+		
+		// Retrieve tokens for auth
+		const authToken = storageManager.getValue('authToken');
+		// Retrieve for identification
+		const workspaceRoot = vscode.workspace.workspaceFolders![0];
+		const root = workspaceRoot?.uri?.path;
 
-		quickPick.onDidChangeValue((value: string) => {
-			let itemResults: vscode.QuickPickItem[] = [];
+		quickPick.onDidChangeValue(async (value: string) => {
 			if (value) {
-				// TODO: Add dynamic autocompletes
-				itemResults = [{label: value, description: ENTIRE_WORKSPACE_OPTION }, {label: value, description: THIS_FILE_OPTION }];
+				let itemResults: vscode.QuickPickItem[] = [];
+				let autoSuggestions: string[] = [];
+				itemResults = [
+					{label: value, description: ENTIRE_WORKSPACE_OPTION },
+					{label: value, description: THIS_FILE_OPTION },
+				];
+
+				quickPick.items = itemResults;
+
+				if (authToken) {
+					const { data: autoCompleteData }: {data: string[]} = await axios.post('http://localhost:5000/search/autocomplete', {
+						query: value,
+						root,
+						authToken,
+					});
+
+					autoSuggestions = autoCompleteData;
+				}
+				const autoSuggestionResults = autoSuggestions.map((suggestion) => {
+					return {
+						label: suggestion,
+					};
+				});
+				itemResults = [
+					{label: value, description: ENTIRE_WORKSPACE_OPTION },
+					{label: value, description: THIS_FILE_OPTION },
+					...autoSuggestionResults
+				];
+
+				return quickPick.items = itemResults;
 			}
 
-			return quickPick.items = itemResults;
+			return quickPick.items = [];
 		});
 		quickPick.onDidChangeSelection(async (selectedItems) => {
 			const selected = selectedItems[0];
@@ -87,8 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
 			quickPick.value = search;
 			const optionShort = getOptionShort(option);
 
-			const { accessToken, refreshToken } = getTokens();
-			if (!accessToken) {
+			if (!authToken) {
 				return showLoginMessage();
 			}
 
@@ -103,8 +118,8 @@ export function activate(context: vscode.ExtensionContext) {
 						const searchRes: { data: { results: SearchResult[] } } = await axios.post('http://localhost:5000/search/results', {
 							files,
 							search,
-							accessToken,
-							refreshToken
+							root,
+							authToken
 						}, {
 							maxContentLength: Infinity,
 							maxBodyLength: Infinity,
@@ -256,14 +271,13 @@ export function activate(context: vscode.ExtensionContext) {
 				const code = query.get('code');
 				try {
 					const authResponse = await axios.post('http://localhost:5000/user/code', {code});
-					const tokens = authResponse.data;
-					setTokens(tokens);
+					const { authToken } = authResponse.data;
+					storageManager.setValue('authToken', authToken);
 				} catch (error) {
 					console.log({error});
 				}
       } else if (uri.path === '/logout') {
-				storageManager.setValue('accessToken', null);
-        storageManager.setValue('refreshToken', null);
+				storageManager.setValue('authToken', null);
 				showLoginMessage();
 			}
     }

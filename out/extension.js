@@ -28,18 +28,8 @@ const showLoginMessage = () => {
 function activate(context) {
     // Set storage manager for auth tokens
     const storageManager = new LocalStorageService(context.globalState);
-    const getTokens = () => {
-        return {
-            accessToken: storageManager.getValue('accessToken'),
-            refreshToken: storageManager.getValue('refreshToken')
-        };
-    };
-    const setTokens = ({ accessToken, refreshToken }) => {
-        storageManager.setValue('accessToken', accessToken);
-        storageManager.setValue('refreshToken', refreshToken);
-    };
-    const { accessToken } = getTokens();
-    if (!accessToken) {
+    const authToken = storageManager.getValue('authToken');
+    if (!authToken) {
         showLoginMessage();
     }
     const search = vscode.commands.registerCommand('mintlify.search', async () => {
@@ -47,13 +37,41 @@ function activate(context) {
         quickPick.title = "Mint Search";
         quickPick.placeholder = "What would you like to find?";
         quickPick.show();
-        quickPick.onDidChangeValue((value) => {
-            let itemResults = [];
+        // Retrieve tokens for auth
+        const authToken = storageManager.getValue('authToken');
+        // Retrieve for identification
+        const workspaceRoot = vscode.workspace.workspaceFolders[0];
+        const root = workspaceRoot?.uri?.path;
+        quickPick.onDidChangeValue(async (value) => {
             if (value) {
-                // TODO: Add dynamic autocompletes
-                itemResults = [{ label: value, description: utils_1.ENTIRE_WORKSPACE_OPTION }, { label: value, description: utils_1.THIS_FILE_OPTION }];
+                let itemResults = [];
+                let autoSuggestions = [];
+                itemResults = [
+                    { label: value, description: utils_1.ENTIRE_WORKSPACE_OPTION },
+                    { label: value, description: utils_1.THIS_FILE_OPTION },
+                ];
+                quickPick.items = itemResults;
+                if (authToken) {
+                    const { data: autoCompleteData } = await axios_1.default.post('http://localhost:5000/search/autocomplete', {
+                        query: value,
+                        root,
+                        authToken,
+                    });
+                    autoSuggestions = autoCompleteData;
+                }
+                const autoSuggestionResults = autoSuggestions.map((suggestion) => {
+                    return {
+                        label: suggestion,
+                    };
+                });
+                itemResults = [
+                    { label: value, description: utils_1.ENTIRE_WORKSPACE_OPTION },
+                    { label: value, description: utils_1.THIS_FILE_OPTION },
+                    ...autoSuggestionResults
+                ];
+                return quickPick.items = itemResults;
             }
-            return quickPick.items = itemResults;
+            return quickPick.items = [];
         });
         quickPick.onDidChangeSelection(async (selectedItems) => {
             const selected = selectedItems[0];
@@ -63,8 +81,7 @@ function activate(context) {
             }
             quickPick.value = search;
             const optionShort = (0, utils_1.getOptionShort)(option);
-            const { accessToken, refreshToken } = getTokens();
-            if (!accessToken) {
+            if (!authToken) {
                 return showLoginMessage();
             }
             vscode.window.withProgress({
@@ -77,8 +94,8 @@ function activate(context) {
                         const searchRes = await axios_1.default.post('http://localhost:5000/search/results', {
                             files,
                             search,
-                            accessToken,
-                            refreshToken
+                            root,
+                            authToken
                         }, {
                             maxContentLength: Infinity,
                             maxBodyLength: Infinity,
@@ -206,16 +223,15 @@ function activate(context) {
                 const code = query.get('code');
                 try {
                     const authResponse = await axios_1.default.post('http://localhost:5000/user/code', { code });
-                    const tokens = authResponse.data;
-                    setTokens(tokens);
+                    const { authToken } = authResponse.data;
+                    storageManager.setValue('authToken', authToken);
                 }
                 catch (error) {
                     console.log({ error });
                 }
             }
             else if (uri.path === '/logout') {
-                storageManager.setValue('accessToken', null);
-                storageManager.setValue('refreshToken', null);
+                storageManager.setValue('authToken', null);
                 showLoginMessage();
             }
         }
