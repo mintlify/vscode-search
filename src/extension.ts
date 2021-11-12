@@ -129,7 +129,11 @@ export function activate(context: vscode.ExtensionContext) {
 				return new Promise(async (resolve, reject) => {
 					try {
 						const files = await getFiles(option);
-						const searchRes: { data: { results: SearchResult[] } } = await axios.post('http://localhost:5000/search/results', {
+						const searchRes: {
+								data: {
+									results: SearchResult[], objectID: string
+								}
+						} = await axios.post('http://localhost:5000/search/results', {
 							files,
 							search,
 							root,
@@ -139,7 +143,7 @@ export function activate(context: vscode.ExtensionContext) {
 							maxBodyLength: Infinity,
 						});
 
-						const searchResults = searchRes.data.results;
+						const { results: searchResults, objectID } = searchRes.data;
 						const resultItems = searchResults.map((result) => {
 							return {
 								label: result.content,
@@ -177,11 +181,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 						resultsPick.onDidChangeSelection(async (selectedItems) => {
 							const item = selectedItems[0];
-							const itemContext = searchResults.find((result) => result.content === item.label);
+							const selectedIndex = searchResults.findIndex((result) => result.content === item.label);
 
-							if (!itemContext) {return null;}
+							if (selectedIndex === -1) {return;}
 
-							const { path, lineStart, lineEnd } = itemContext;
+							const selectedItem = searchResults[selectedIndex];
+
+							const { path, lineStart, lineEnd } = selectedItem;
 							const filePathUri = vscode.Uri.parse(path);
 							const startPosition = new vscode.Position(lineStart, 0);
 							const endPosition = new vscode.Position(lineEnd, 9999);
@@ -189,6 +195,24 @@ export function activate(context: vscode.ExtensionContext) {
 							await vscode.window.showTextDocument(filePathUri, {
 								selection: selectedRange,
 							});
+
+							try {
+								await axios.put('http://localhost:5000/search/feedback', {
+									authToken,
+									objectID,
+									engagedIndex: selectedIndex,
+								});
+							}
+							catch (error: any) {
+								const backendError = error?.response?.data;
+								if (backendError) {
+									const { shouldPromptWaitlist } = backendError;
+									showErrorMessage(backendError.error,
+										shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
+										shouldPromptWaitlist && LOGOUT_BUTTON
+									);
+								}
+							}
 						});
 
 						resolve('Completed search');
@@ -261,6 +285,8 @@ export function activate(context: vscode.ExtensionContext) {
 		askPick.onDidChangeSelection(async (selectedItems) => {
 			const selected = selectedItems[0];
 
+			if (!selected) {return;}
+
 			const { label: question, description: option } = selected;
 			if (!question) {
 				return null;
@@ -291,7 +317,7 @@ export function activate(context: vscode.ExtensionContext) {
 							maxBodyLength: Infinity,
 						});
 
-						let answer = searchRes.data.answer;
+						let { answer, objectID } = searchRes.data;
 						if (!answer) {
 							answer = 'No answer found';
 						}
@@ -328,7 +354,47 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 					];
 
-						resolve('Complete ask');
+					answerPick.onDidChangeSelection(async (selectedItems) => {
+						const item = selectedItems[0];
+
+						if (!item) {return;}
+
+						let selectedFeedbackScore;
+						switch (item.label) {
+							case '🙅‍♂️':
+								selectedFeedbackScore = 0;
+								break;
+							case '👍':
+								selectedFeedbackScore = 1;
+								break;
+							case '🤷':
+								selectedFeedbackScore = 2;
+									break;
+							default:
+								selectedFeedbackScore = null;
+								break;
+						}
+
+						try {
+							await axios.put('http://localhost:5000/ask/feedback', {
+								authToken,
+								objectID,
+								feedback: selectedFeedbackScore,
+							});
+						}
+						catch (error: any) {
+							const backendError = error?.response?.data;
+							if (backendError) {
+								const { shouldPromptWaitlist } = backendError;
+								showErrorMessage(backendError.error,
+									shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
+									shouldPromptWaitlist && LOGOUT_BUTTON
+								);
+							}
+						}
+					});
+
+					resolve('Complete ask');
 					}
 					catch (error: any) {
 						reject('Failed');
