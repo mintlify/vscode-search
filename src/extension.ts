@@ -244,7 +244,11 @@ export function activate(context: vscode.ExtensionContext) {
 						maxBodyLength: Infinity,
 					});
 
-					const answer = searchRes.data.answer;
+					let answer = searchRes.data.answer;
+					if (!answer) {
+						answer = 'No answer found';
+					}
+
 					quickPick.hide();
 
 					const answerPick = vscode.window.createQuickPick();
