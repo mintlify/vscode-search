@@ -35,6 +35,19 @@ const showLoginMessage = () => {
 		});
 };
 
+const showErrorMessage = async (message: string, ...buttons: string[]) => {
+	const userActionOnError = await vscode.window.showErrorMessage(
+		message,
+		...buttons
+	);
+	if (userActionOnError === REQUEST_ACCESS_BUTTON) {
+		vscode.env.openExternal(vscode.Uri.parse(REQUEST_ACCESS_URI));
+	}
+	else if (userActionOnError === LOGOUT_BUTTON) {
+		vscode.commands.executeCommand('mintlify.logout');
+	}
+};
+
 export function activate(context: vscode.ExtensionContext) {
 	// Set storage manager for auth tokens
 	const storageManager = new LocalStorageService(context.globalState);
@@ -45,10 +58,10 @@ export function activate(context: vscode.ExtensionContext) {
 	}
 
 	const search = vscode.commands.registerCommand('mintlify.search', async () => {
-		const quickPick = vscode.window.createQuickPick();
-		quickPick.title = "Mint Search";
-		quickPick.placeholder = "What would you like to find?";
-		quickPick.show();
+		const searchPick = vscode.window.createQuickPick();
+		searchPick.title = "Mint Search";
+		searchPick.placeholder = "What would you like to find?";
+		searchPick.show();
 		
 		// Retrieve tokens for auth
 		const authToken = storageManager.getValue('authToken');
@@ -56,43 +69,43 @@ export function activate(context: vscode.ExtensionContext) {
 		const workspaceRoot = vscode.workspace.workspaceFolders![0];
 		const root = workspaceRoot?.uri?.path;
 
-		quickPick.onDidChangeValue(async (value: string) => {
-			if (value) {
-				let itemResults: vscode.QuickPickItem[] = [];
-				let autoSuggestions: string[] = [];
-				itemResults = [
-					{label: value, description: ENTIRE_WORKSPACE_OPTION },
-					{label: value, description: THIS_FILE_OPTION },
-				];
-
-				quickPick.items = itemResults;
-
-				if (authToken) {
-					const { data: autoCompleteData }: {data: string[]} = await axios.post('http://localhost:5000/search/autocomplete', {
-						query: value,
-						root,
-						authToken,
-					});
-
-					autoSuggestions = autoCompleteData;
-				}
-				const autoSuggestionResults = autoSuggestions.map((suggestion) => {
-					return {
-						label: suggestion,
-					};
-				});
-				itemResults = [
-					{label: value, description: ENTIRE_WORKSPACE_OPTION },
-					{label: value, description: THIS_FILE_OPTION },
-					...autoSuggestionResults
-				];
-
-				return quickPick.items = itemResults;
+		searchPick.onDidChangeValue(async (value: string) => {
+			if (!value) {
+				return searchPick.items = [];
 			}
 
-			return quickPick.items = [];
+			let itemResults: vscode.QuickPickItem[] = [];
+			let autoSuggestions: string[] = [];
+			itemResults = [
+				{label: value, description: ENTIRE_WORKSPACE_OPTION },
+				{label: value, description: THIS_FILE_OPTION },
+			];
+
+			searchPick.items = itemResults;
+
+			if (authToken) {
+				const { data: autoCompleteData }: {data: string[]} = await axios.post('http://localhost:5000/search/autocomplete', {
+					query: value,
+					root,
+					authToken,
+				});
+
+				autoSuggestions = autoCompleteData;
+			}
+			const autoSuggestionResults = autoSuggestions.map((suggestion) => {
+				return {
+					label: suggestion,
+				};
+			});
+			itemResults = [
+				{label: value, description: ENTIRE_WORKSPACE_OPTION },
+				{label: value, description: THIS_FILE_OPTION },
+				...autoSuggestionResults
+			];
+
+			return searchPick.items = itemResults;
 		});
-		quickPick.onDidChangeSelection(async (selectedItems) => {
+		searchPick.onDidChangeSelection(async (selectedItems) => {
 			const selected = selectedItems[0];
 
 			const { label: search, description: option } = selected;
@@ -100,12 +113,12 @@ export function activate(context: vscode.ExtensionContext) {
 				return null;
 			}
 
-			quickPick.value = search;
-			const optionShort = getOptionShort(option);
-
 			if (!authToken) {
 				return showLoginMessage();
 			}
+
+			searchPick.value = search;
+			const optionShort = getOptionShort(option);
 
 			vscode.window.withProgress({
 				location: vscode.ProgressLocation.Notification,
@@ -133,7 +146,7 @@ export function activate(context: vscode.ExtensionContext) {
 							};
 						});
 						
-						quickPick.hide();
+						searchPick.hide();
 
 						const resultsPick = vscode.window.createQuickPick();
 						resultsPick.items = resultItems;
@@ -183,17 +196,10 @@ export function activate(context: vscode.ExtensionContext) {
 						const backendError = error?.response?.data;
 						if (backendError) {
 							const { shouldPromptWaitlist } = backendError;
-							const userActionOnError = await vscode.window.showErrorMessage(
-								backendError.error,
+							showErrorMessage(backendError.error,
 								shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
-								shouldPromptWaitlist && LOGOUT_BUTTON,
+								shouldPromptWaitlist && LOGOUT_BUTTON
 							);
-							if (userActionOnError === REQUEST_ACCESS_BUTTON) {
-								vscode.env.openExternal(vscode.Uri.parse(REQUEST_ACCESS_URI));
-							}
-							else if (userActionOnError === LOGOUT_BUTTON) {
-								vscode.commands.executeCommand('mintlify.logout');
-							}
 						}
 					}
 				});
@@ -203,30 +209,66 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	const ask = vscode.commands.registerCommand('mintlify.ask', async () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
+		const askPick = vscode.window.createQuickPick();
+		askPick.title = "Mint Ask (beta)";
+		askPick.placeholder = "What would you like to know?";
+		askPick.show();
 
-		const quickPick = vscode.window.createQuickPick();
-		quickPick.title = "Mint Ask (beta)";
-		quickPick.placeholder = "What would you like to know?";
-		quickPick.show();
-		quickPick.onDidChangeValue((value) => {
-			let itemResults: vscode.QuickPickItem[] = [];
-			if (value) {
-				itemResults = [{label: value, description: ENTIRE_WORKSPACE_OPTION }, {label: value, description: THIS_FILE_OPTION }];
+		// Retrieve tokens for auth
+		const authToken = storageManager.getValue('authToken');
+		// Retrieve for identification
+		const workspaceRoot = vscode.workspace.workspaceFolders![0];
+		const root = workspaceRoot?.uri?.path;
+
+		askPick.onDidChangeValue(async (value) => {
+			if (!value) {
+				return askPick.items = [];
 			}
 
-			return quickPick.items = itemResults;
+			let itemResults: vscode.QuickPickItem[] = [];
+			let autoSuggestions: string[] = [];
+			itemResults = [
+				{label: value, description: ENTIRE_WORKSPACE_OPTION },
+				{label: value, description: THIS_FILE_OPTION },
+			];
+
+			askPick.items = itemResults;
+
+			if (authToken) {
+				const { data: autoCompleteData }: {data: string[]} = await axios.post('http://localhost:5000/ask/autocomplete', {
+					query: value,
+					root,
+					authToken,
+				});
+
+				autoSuggestions = autoCompleteData;
+			}
+			const autoSuggestionResults = autoSuggestions.map((suggestion) => {
+				return {
+					label: suggestion,
+				};
+			});
+			itemResults = [
+				{label: value, description: ENTIRE_WORKSPACE_OPTION },
+				{label: value, description: THIS_FILE_OPTION },
+				...autoSuggestionResults
+			];
+
+			return askPick.items = itemResults;
 		});
-		quickPick.onDidChangeSelection(async (selectedItems) => {
+		askPick.onDidChangeSelection(async (selectedItems) => {
 			const selected = selectedItems[0];
 
 			const { label: question, description: option } = selected;
-			if (!question || !option) {
+			if (!question) {
 				return null;
 			}
 
-			quickPick.value = question;
+			if (!authToken) {
+				return showLoginMessage();
+			}
+
+			askPick.value = question;
 			const optionShort = getOptionShort(option);
 
 			vscode.window.withProgress({
@@ -234,30 +276,45 @@ export function activate(context: vscode.ExtensionContext) {
 				title: `🎤 Mint answering from ${optionShort}`,
 			},
 			() => {
-				return new Promise(async (resolve) => {
-					const files = await getFiles(option);
-					const searchRes = await axios.post('http://localhost:5000/ask/answer', {
-						files,
-						question,
-					}, {
-						maxContentLength: Infinity,
-						maxBodyLength: Infinity,
-					});
+				return new Promise(async (resolve, reject) => {
+					try {
+						const files = await getFiles(option);
+						const searchRes = await axios.post('http://localhost:5000/ask/answer', {
+							files,
+							question,
+							root,
+							authToken
+						}, {
+							maxContentLength: Infinity,
+							maxBodyLength: Infinity,
+						});
 
-					let answer = searchRes.data.answer;
-					if (!answer) {
-						answer = 'No answer found';
+						let answer = searchRes.data.answer;
+						if (!answer) {
+							answer = 'No answer found';
+						}
+
+						askPick.hide();
+
+						const answerPick = vscode.window.createQuickPick();
+						answerPick.items = [{ label: answer }];
+						answerPick.title = "Mint Answer Results";
+						answerPick.placeholder = question;
+						answerPick.show();
+
+						resolve('Complete ask');
 					}
-
-					quickPick.hide();
-
-					const answerPick = vscode.window.createQuickPick();
-					answerPick.items = [{ label: answer }];
-					answerPick.title = "Mint Answer Results";
-					answerPick.placeholder = question;
-					answerPick.show();
-
-					resolve('Complete ask');
+					catch (error: any) {
+						reject('Failed');
+						const backendError = error?.response?.data;
+						if (backendError) {
+							const { shouldPromptWaitlist } = backendError;
+							showErrorMessage(backendError.error,
+								shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
+								shouldPromptWaitlist && LOGOUT_BUTTON
+							);
+						}
+					}
 				});
 			});
 		});
