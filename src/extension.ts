@@ -95,6 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const autoSuggestionResults = autoSuggestions.map((suggestion) => {
 				return {
 					label: suggestion,
+					alwaysShow: true,
 				};
 			});
 			itemResults = [
@@ -246,6 +247,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const autoSuggestionResults = autoSuggestions.map((suggestion) => {
 				return {
 					label: suggestion,
+					alwaysShow: true,
 				};
 			});
 			itemResults = [
@@ -297,10 +299,34 @@ export function activate(context: vscode.ExtensionContext) {
 						askPick.hide();
 
 						const answerPick = vscode.window.createQuickPick();
-						answerPick.items = [{ label: answer }];
 						answerPick.title = "Mint Answer Results";
 						answerPick.placeholder = question;
 						answerPick.show();
+						const answerByLine = answer.replace(/(?![^\n]{1,64}$)([^\n]{1,64})\s/g, '$1\n').split('\n');
+						const itemsByLine =  answerByLine.map((line: string) => {
+							return {
+								label: line,
+								alwaysShow: true
+							};
+						});
+
+						answerPick.items = [...itemsByLine,
+						{
+							label: '👍',
+							description: 'Answer is useful',
+							alwaysShow: true,
+						},
+						{
+							label: '🤷',
+							description: 'Not enough information',
+							alwaysShow: true,
+						},
+						{
+							label: '🙅‍♂️',
+							description: 'Answer is incorrect',
+							alwaysShow: true,
+						}
+					];
 
 						resolve('Complete ask');
 					}
