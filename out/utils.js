@@ -35,7 +35,7 @@ const isTraversablePath = (folderName) => {
 };
 exports.ENTIRE_WORKSPACE_OPTION = 'Search entire workspace';
 exports.THIS_FILE_OPTION = 'Search this file';
-const getFiles = async (option) => {
+const getFiles = async (option = exports.ENTIRE_WORKSPACE_OPTION) => {
     if (option === exports.ENTIRE_WORKSPACE_OPTION) {
         const root = vscode.workspace.workspaceFolders[0].uri;
         const files = await traverseFiles(root, []);
@@ -58,7 +58,7 @@ const getFiles = async (option) => {
     return [];
 };
 exports.getFiles = getFiles;
-const getOptionShort = (option) => {
+const getOptionShort = (option = exports.ENTIRE_WORKSPACE_OPTION) => {
     switch (option) {
         case exports.ENTIRE_WORKSPACE_OPTION:
             return 'the workspace';

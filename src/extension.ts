@@ -96,7 +96,7 @@ export function activate(context: vscode.ExtensionContext) {
 			const selected = selectedItems[0];
 
 			const { label: search, description: option } = selected;
-			if (!search || !option) {
+			if (!search) {
 				return null;
 			}
 
