@@ -197,7 +197,7 @@ export function activate(context: vscode.ExtensionContext) {
 							});
 
 							try {
-								await axios.put('http://localhost:5000/search/feedback', {
+								axios.put('http://localhost:5000/search/feedback', {
 									authToken,
 									objectID,
 									engagedIndex: selectedIndex,
@@ -381,6 +381,8 @@ export function activate(context: vscode.ExtensionContext) {
 								objectID,
 								feedback: selectedFeedbackScore,
 							});
+
+							vscode.window.showInformationMessage('Feedback submitted');
 						}
 						catch (error: any) {
 							const backendError = error?.response?.data;
@@ -391,6 +393,9 @@ export function activate(context: vscode.ExtensionContext) {
 									shouldPromptWaitlist && LOGOUT_BUTTON
 								);
 							}
+						}
+						finally {
+							answerPick.dispose();
 						}
 					});
 
