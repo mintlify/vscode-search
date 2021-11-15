@@ -1,69 +1,78 @@
 {
-	"name": "search",
-	"publisher": "mintlify",
-	"displayName": "",
-	"description": "The VSCode extension for Mintlify",
-	"version": "0.0.1",
-	"engines": {
-		"vscode": "^1.61.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"activationEvents": [
-		"onStartupFinished",
-		"onCommand:mintlify.search",
-		"onCommand:mintlify.ask"
-	],
-	"main": "./out/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "mintlify.search",
-				"title": "Mint Search"
-			},
-			{
-				"command": "mintlify.ask",
-				"title": "Mint Ask"
-			}
-		],
-		"keybindings": [
-			{
-				"key": "ctrl+;",
-				"mac": "cmd+;",
-				"command": "mintlify.search",
-				"when": "editorFocus"
-			},
-			{
-				"key": "ctrl+'",
-				"mac": "cmd+'",
-				"command": "mintlify.ask",
-				"when": "editorFocus"
-			}
-		]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"pretest": "npm run compile && npm run lint",
-		"lint": "eslint src --ext ts",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/vscode": "^1.61.0",
-		"@types/glob": "^7.1.4",
-		"@types/mocha": "^9.0.0",
-		"@types/node": "14.x",
-		"@typescript-eslint/eslint-plugin": "^4.31.1",
-		"@typescript-eslint/parser": "^4.31.1",
-		"eslint": "^7.32.0",
-		"glob": "^7.1.7",
-		"mocha": "^9.1.1",
-		"typescript": "^4.4.3",
-		"@vscode/test-electron": "^1.6.2"
-	},
-	"dependencies": {
-		"axios": "^0.24.0"
-	}
+  "name": "search",
+  "publisher": "mintlify",
+  "displayName": "",
+  "description": "The VSCode extension for Mintlify",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.61.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:mintlify.search",
+    "onCommand:mintlify.ask",
+    "onCommand:mintlify.document"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mintlify.search",
+        "title": "Mint Search"
+      },
+      {
+        "command": "mintlify.ask",
+        "title": "Mint Ask"
+      }
+    ],
+    "keybindings": [
+      {
+        "key": "ctrl+;",
+        "mac": "cmd+;",
+        "command": "mintlify.search",
+        "when": "editorFocus"
+      },
+      {
+        "key": "ctrl+'",
+        "mac": "cmd+'",
+        "command": "mintlify.ask",
+        "when": "editorFocus"
+      }
+    ]
+  },
+  "menus": {
+    "editor/context": [
+      {
+        "when": "!editorHasSelection",
+        "command": "mintlify.document"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.61.0",
+    "@types/glob": "^7.1.4",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "14.x",
+    "@typescript-eslint/eslint-plugin": "^4.31.1",
+    "@typescript-eslint/parser": "^4.31.1",
+    "eslint": "^7.32.0",
+    "glob": "^7.1.7",
+    "mocha": "^9.1.1",
+    "typescript": "^4.4.3",
+    "@vscode/test-electron": "^1.6.2"
+  },
+  "dependencies": {
+    "axios": "^0.24.0"
+  }
 }
