@@ -47,7 +47,7 @@
     "editor/context": [
       {
         "when": "!editorHasSelection",
-        "command": "mintlify.document"
+        "command": "mintlify.documentFile"
       }
     ]
   },
