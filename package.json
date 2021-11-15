@@ -14,7 +14,8 @@
     "onStartupFinished",
     "onCommand:mintlify.search",
     "onCommand:mintlify.ask",
-    "onCommand:mintlify.document"
+    "onCommand:mintlify.logout",
+    "mintlify.documentFile"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -26,6 +27,14 @@
       {
         "command": "mintlify.ask",
         "title": "Mint Ask"
+      },
+      {
+        "command": "mintlify.logout",
+        "title": "Logout of Mintlify"
+      },
+      {
+        "command": "mintlify.documentFile",
+        "title": "Mint Document"
       }
     ],
     "keybindings": [
