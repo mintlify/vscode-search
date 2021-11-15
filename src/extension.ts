@@ -12,6 +12,11 @@ type SearchResult = {
 	lineEnd: number;
 };
 
+type Doc = {
+	doc: string;
+	insertPosition: vscode.Position;
+};
+
 const ENTIRE_WORKSPACE_OPTION = 'Search entire workspace';
 const THIS_FILE_OPTION = 'Search this file';
 
@@ -232,7 +237,40 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	context.subscriptions.push(search, ask);
+	const documentFile = vscode.commands.registerCommand('mintlify.documentFile', async () => {
+    vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: 'Generating documentation',
+      cancellable: true,
+    }, () => {
+      return new Promise(async (resolve) => {
+				const editor = vscode.window.activeTextEditor;
+				if(editor) {
+					const files = await getFiles(THIS_FILE_OPTION);
+					try {
+						const documentRes = await axios.post(`http://localhost:5000/document/file`, {
+							files
+						});
+						const docs: Doc[] = documentRes.data.documents;
+						docs.forEach(doc => {
+							const snippet = new vscode.SnippetString(`${doc.doc}\n`);
+							editor.insertSnippet(snippet, doc.insertPosition);
+						});
+						resolve('Complete docstring generation');
+					} catch (err: any) {
+						let errorMessage = 'Error';
+						if (err.response.data.error) {
+							errorMessage = err.response.data.error;
+						}
+						vscode.window.showErrorMessage(errorMessage);
+						resolve(errorMessage);
+					}
+				}
+      });
+    });
+  });
+
+	context.subscriptions.push(search, ask, documentFile);
 }
 
 // this method is called when your extension is deactivated
