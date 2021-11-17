@@ -4,7 +4,9 @@ import { URLSearchParams } from 'url';
 import { getFiles, getOptionShort, ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, SIGN_IN_BUTTON, REQUEST_ACCESS_BUTTON,
 	REQUEST_ACCESS_URI, LOGOUT_BUTTON } from './utils';
-import { LOGIN_URI, LOGOUT_URI } from './auth';
+import { LOGIN_URI, LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
+	MINT_SEARCH_RESULTS, MINT_ASK_ANSWER, MINT_ASK_AUTOCOMPLETE,
+	MINT_ASK_FEEDBACK, MINT_SEARCH_FEEDBACK, MINT_USER_CODE } from './api';
 
 type SearchResult = {
 	path: string;
@@ -84,7 +86,7 @@ export function activate(context: vscode.ExtensionContext) {
 			searchPick.items = itemResults;
 
 			if (authToken) {
-				const { data: autoCompleteData }: {data: string[]} = await axios.post('http://localhost:5000/search/autocomplete', {
+				const { data: autoCompleteData }: {data: string[]} = await axios.post(MINT_SEARCH_AUTOCOMPLETE, {
 					query: value,
 					root,
 					authToken,
@@ -133,7 +135,7 @@ export function activate(context: vscode.ExtensionContext) {
 								data: {
 									results: SearchResult[], objectID: string
 								}
-						} = await axios.post('http://localhost:5000/search/results', {
+						} = await axios.post(MINT_SEARCH_RESULTS, {
 							files,
 							search,
 							root,
@@ -197,7 +199,7 @@ export function activate(context: vscode.ExtensionContext) {
 							});
 
 							try {
-								axios.put('http://localhost:5000/search/feedback', {
+								axios.put(MINT_SEARCH_FEEDBACK, {
 									authToken,
 									objectID,
 									engagedIndex: selectedIndex,
@@ -260,7 +262,7 @@ export function activate(context: vscode.ExtensionContext) {
 			askPick.items = itemResults;
 
 			if (authToken) {
-				const { data: autoCompleteData }: {data: string[]} = await axios.post('http://localhost:5000/ask/autocomplete', {
+				const { data: autoCompleteData }: {data: string[]} = await axios.post(MINT_ASK_AUTOCOMPLETE, {
 					query: value,
 					root,
 					authToken,
@@ -307,7 +309,7 @@ export function activate(context: vscode.ExtensionContext) {
 				return new Promise(async (resolve, reject) => {
 					try {
 						const files = await getFiles(option);
-						const searchRes = await axios.post('http://localhost:5000/ask/answer', {
+						const searchRes = await axios.post(MINT_ASK_ANSWER, {
 							files,
 							question,
 							root,
@@ -376,7 +378,7 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 
 						try {
-							await axios.put('http://localhost:5000/ask/feedback', {
+							await axios.put(MINT_ASK_FEEDBACK, {
 								authToken,
 								objectID,
 								feedback: selectedFeedbackScore,
@@ -428,7 +430,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 				const code = query.get('code');
 				try {
-					const authResponse = await axios.post('http://localhost:5000/user/code', {code});
+					const authResponse = await axios.post(MINT_USER_CODE, {code});
 					const { authToken } = authResponse.data;
 					storageManager.setValue('authToken', authToken);
 				} catch (error) {
