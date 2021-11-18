@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { LOGIN_URI } from './api';
 
 export type File = {
 	path: string;
@@ -81,4 +82,40 @@ export const getOptionShort = (option: string = ENTIRE_WORKSPACE_OPTION): string
 		default:
 			return '';
 	}
+};
+
+export const showLoginMessage = () => {
+	vscode.window.showInformationMessage('🌿 Sign in to use Mintlify search', SIGN_IN_BUTTON)
+		.then((selectedValue) => {
+			if (selectedValue === SIGN_IN_BUTTON) {
+				vscode.env.openExternal(vscode.Uri.parse(LOGIN_URI));
+			}
+		});
+};
+
+export const showInformationMessage = async (message: string) => {
+	return vscode.window.showInformationMessage(message);
+};
+
+export const showErrorMessage = async (message: string, ...buttons: string[]) => {
+	const userActionOnError = await vscode.window.showErrorMessage(
+		message,
+		...buttons
+	);
+	if (userActionOnError === REQUEST_ACCESS_BUTTON) {
+		vscode.env.openExternal(vscode.Uri.parse(REQUEST_ACCESS_URI));
+	}
+	else if (userActionOnError === LOGOUT_BUTTON) {
+		vscode.commands.executeCommand('mintlify.logout');
+	}
+};
+
+export const showStatusBarItem = () => {
+	const mintlifyButton = vscode.window.createStatusBarItem(
+		vscode.StatusBarAlignment.Right,
+		0
+	);
+	mintlifyButton.text = '$(search) Mintlify';
+	mintlifyButton.tooltip = 'Open Mintlify Settings';
+	mintlifyButton.show();
 };

@@ -1,10 +1,12 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
 import { URLSearchParams } from 'url';
-import { getFiles, getOptionShort, ENTIRE_WORKSPACE_OPTION,
-	THIS_FILE_OPTION, SIGN_IN_BUTTON, REQUEST_ACCESS_BUTTON,
-	REQUEST_ACCESS_URI, LOGOUT_BUTTON } from './utils';
-import { LOGIN_URI, LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
+import { getFiles, showErrorMessage, showInformationMessage,
+	showLoginMessage, showStatusBarItem,
+	getOptionShort, ENTIRE_WORKSPACE_OPTION,
+	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
+	LOGOUT_BUTTON } from './utils';
+import { LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_ASK_ANSWER, MINT_ASK_AUTOCOMPLETE,
 	MINT_ASK_FEEDBACK, MINT_SEARCH_FEEDBACK, MINT_USER_CODE } from './api';
 
@@ -28,32 +30,6 @@ class LocalStorageService {
   }
 }
 
-const showLoginMessage = () => {
-	vscode.window.showInformationMessage('🌿 Sign in to use Mintlify search', SIGN_IN_BUTTON)
-		.then((selectedValue) => {
-			if (selectedValue === SIGN_IN_BUTTON) {
-				vscode.env.openExternal(vscode.Uri.parse(LOGIN_URI));
-			}
-		});
-};
-
-const showInformationMessage = async (message: string) => {
-	return vscode.window.showInformationMessage(message);
-};
-
-const showErrorMessage = async (message: string, ...buttons: string[]) => {
-	const userActionOnError = await vscode.window.showErrorMessage(
-		message,
-		...buttons
-	);
-	if (userActionOnError === REQUEST_ACCESS_BUTTON) {
-		vscode.env.openExternal(vscode.Uri.parse(REQUEST_ACCESS_URI));
-	}
-	else if (userActionOnError === LOGOUT_BUTTON) {
-		vscode.commands.executeCommand('mintlify.logout');
-	}
-};
-
 export function activate(context: vscode.ExtensionContext) {
 	// Set storage manager for auth tokens
 	const storageManager = new LocalStorageService(context.globalState);
@@ -62,6 +38,8 @@ export function activate(context: vscode.ExtensionContext) {
 	if (!authToken) {
 		showLoginMessage();
 	}
+
+	showStatusBarItem();
 
 	const search = vscode.commands.registerCommand('mintlify.search', async () => {
 		const searchPick = vscode.window.createQuickPick();
