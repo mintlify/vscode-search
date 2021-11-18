@@ -37,6 +37,10 @@ const showLoginMessage = () => {
 		});
 };
 
+const showInformationMessage = async (message: string) => {
+	return vscode.window.showInformationMessage(message);
+};
+
 const showErrorMessage = async (message: string, ...buttons: string[]) => {
 	const userActionOnError = await vscode.window.showErrorMessage(
 		message,
@@ -439,6 +443,7 @@ export function activate(context: vscode.ExtensionContext) {
 					const authResponse = await axios.post(MINT_USER_CODE, {code});
 					const { authToken } = authResponse.data;
 					storageManager.setValue('authToken', authToken);
+					showInformationMessage('Logged in to Mintlify');
 				} catch (error) {
 					console.log({error});
 				}
