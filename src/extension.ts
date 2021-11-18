@@ -146,12 +146,18 @@ export function activate(context: vscode.ExtensionContext) {
 						});
 
 						const { results: searchResults, objectID } = searchRes.data;
-						const resultItems = searchResults.map((result) => {
+						const resultItems = searchResults.length > 0 ? searchResults.map((result) => {
 							return {
 								label: result.content,
 								detail: result.filename
 							};
-						});
+						}) : [
+							{
+								label: '📭',
+								description: 'No results found. Try broadening your search',
+								alwaysShow: true,
+							}
+						];
 						
 						searchPick.hide();
 

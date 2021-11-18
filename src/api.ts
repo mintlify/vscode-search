@@ -1,4 +1,4 @@
-const isDevMode = false;
+const isDevMode = true;
 
 // Backend API
 const MINTBASE = isDevMode ? 'http://localhost:5000' : 'https://api.mintlify.com';
