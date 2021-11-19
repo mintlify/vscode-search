@@ -45,7 +45,14 @@
 				"command": "mintlify.ask",
 				"when": "editorFocus"
 			}
-		]
+		],
+		"productIconThemes": [
+      {
+        "id": "mintlify-icons",
+        "label": "Mintlify",
+        "path": "./icons/mintlify-product-icon-theme.json"
+      }
+    ]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

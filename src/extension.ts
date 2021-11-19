@@ -3,6 +3,7 @@ import axios from 'axios';
 import { URLSearchParams } from 'url';
 import { getFiles, showErrorMessage, showInformationMessage,
 	showLoginMessage, showStatusBarItem,
+	showSettings,
 	getOptionShort, ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON } from './utils';
@@ -411,6 +412,11 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.env.openExternal(vscode.Uri.parse(LOGOUT_URI));
 	});
 
+	const settings = vscode.commands.registerCommand('mintlify.settings', async () => {
+		const authToken = storageManager.getValue('authToken');
+		showSettings(authToken != null);
+	});
+
 	vscode.window.registerUriHandler({
     async handleUri(uri: vscode.Uri) {
       if (uri.path === '/auth') {
@@ -432,7 +438,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-	context.subscriptions.push(search, ask, logout);
+	context.subscriptions.push(search, ask, logout, settings);
 }
 
 // this method is called when your extension is deactivated

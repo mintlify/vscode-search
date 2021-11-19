@@ -1,0 +1,20 @@
+{
+  "fonts": [
+    {
+      "id": "mintlify-font",
+      "src": [
+        {
+          "path": "./mintlify.woff",
+          "format": "woff"
+        }
+      ],
+      "weight": "normal",
+      "style": "normal"
+    }
+  ],
+  "iconDefinitions": {
+    "squirrel": {
+      "fontCharacter": "\\0041"
+    }
+  }
+}

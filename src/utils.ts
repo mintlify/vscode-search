@@ -110,12 +110,41 @@ export const showErrorMessage = async (message: string, ...buttons: string[]) =>
 	}
 };
 
+const SEARCH_BUTTON = '🔎 Search';
+const ASK_BUTTON = '🎤 Ask';
+
+export const showSettings = async (isLoggedIn: boolean) => {
+	if (!isLoggedIn) {
+		return showLoginMessage();
+	}
+	
+	const selectedButton = await vscode.window.showInformationMessage('🌿 Mintlify Settings', SEARCH_BUTTON, ASK_BUTTON, LOGOUT_BUTTON);
+	let selectedCommand: string;
+	switch (selectedButton) {
+		case SEARCH_BUTTON:
+			selectedCommand = 'mintlify.search';
+			break;
+		case ASK_BUTTON:
+			selectedCommand = 'mintlify.ask';
+			break;
+		case LOGOUT_BUTTON:
+			selectedCommand = 'mintlify.logout';
+			break;
+		default:
+			selectedCommand = '';
+			break;
+	}
+	
+	vscode.commands.executeCommand(selectedCommand);
+};
+
 export const showStatusBarItem = () => {
 	const mintlifyButton = vscode.window.createStatusBarItem(
 		vscode.StatusBarAlignment.Right,
 		0
 	);
-	mintlifyButton.text = '$(search) Mintlify';
+	mintlifyButton.text = '$(squirrel) Mintlify';
 	mintlifyButton.tooltip = 'Open Mintlify Settings';
+	mintlifyButton.command = 'mintlify.settings';
 	mintlifyButton.show();
 };
