@@ -1,4 +1,4 @@
-# Mintlify Search
+# 🌿 Mintlify Search
 
 Simple as ⌘+F. Smart as Google. Get answers and discover functions in your organization's code.
 
