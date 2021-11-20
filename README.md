@@ -6,65 +6,34 @@ Simple as ⌘+F. Smart as Google. Get answers and discover functions in your org
 
 [<img src="/img/demo.gif" width="520px" />](https://www.loom.com/embed/69b43d89c6ee43c8bc6ddc1e282854e3?autoplay=1)
 
-## Search
+## Search - ⌘ + ;
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Find code snippets by searching exactly what you're looking for in english
 
-[<img src="/img/search.gif" width="520px" />](https://www.loom.com/embed/69b43d89c6ee43c8bc6ddc1e282854e3?autoplay=1)
+<img src="/img/search.gif" width="520px" />
 
-## Ask
+## Ask - ⌘ + '
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+Get answers to your questions about the code
 
-## Extension Settings
+<img src="/img/ask.gif" width="520px" />
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+### Autocomplete
 
-For example:
+Easily search across common questions asked by you or your team
 
-This extension contributes the following settings:
+<img src="/img/autocomplete.png" width="520px" />
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
+### 🌿 Join our private beta
 
-## Known Issues
+Sign up to the [waitlist](https://www.mintlify.com/start-minting) to get access to Mintlify.
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+**Expected wait-time**: 3-7 days
 
 -----------------------------------------------------------------------------------------------------------
-## Following extension guidelines
+### More information
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+[Website](https://mintlify.com/)
+[Twitter](https://twitter.com/mintlify)
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+*Built with 💚 by the Mintlify team*
