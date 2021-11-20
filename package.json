@@ -1,9 +1,13 @@
 {
 	"name": "search",
+	"description": "The search engine in your codebase",
+	"icon": "img/icon.png",
 	"publisher": "mintlify",
 	"displayName": "Mintlify",
-	"description": "The VSCode extension for Mintlify",
-	"version": "0.0.1",
+	"version": "0.0.2",
+	"repository": {
+		"url": "https://github.com/mintlify/vscode"
+	},
 	"engines": {
 		"vscode": "^1.61.0"
 	},
