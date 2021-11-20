@@ -40,14 +40,12 @@
 			{
 				"key": "ctrl+;",
 				"mac": "cmd+;",
-				"command": "mintlify.search",
-				"when": "editorFocus"
+				"command": "mintlify.search"
 			},
 			{
 				"key": "ctrl+'",
 				"mac": "cmd+'",
-				"command": "mintlify.ask",
-				"when": "editorFocus"
+				"command": "mintlify.ask"
 			}
 		],
 		"productIconThemes": [
