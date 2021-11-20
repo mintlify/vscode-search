@@ -21,7 +21,7 @@
 		"onCommand:mintlify.logout",
 		"onCommand:mintlify.settings"
 	],
-	"main": "./dist/extension",
+	"main": "./out/extension",
 	"contributes": {
 		"commands": [
 			{
