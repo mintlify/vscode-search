@@ -1,4 +1,5 @@
 <img src="/img/logo.png" alt="Mintlify" height="80"/>
+
 ## Mintlify
 
 Simple as ⌘+F. Smart as Google. Get answers and discover functions in your organization's code.
