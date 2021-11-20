@@ -63,15 +63,14 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run esbuild-base -- --minify",
-		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
 		"pretest": "npm run compile && npm run lint",
 		"lint": "eslint src --ext ts",
 		"test": "node ./out/test/runTest.js",
 		"esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
-    "esbuild": "npm run esbuild-base -- --sourcemap",
-    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
-    "local": "vsce package && code --install-extension search-0.0.3.vsix"
+		"esbuild": "npm run esbuild-base -- --sourcemap",
+		"esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+		"local": "vsce package && code --install-extension search-0.0.3.vsix"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.4",
