@@ -2,7 +2,7 @@
 # Mintlify
 
 Simple as ⌘+F. Smart as Google. Get answers and discover functions in your organization's code.
-[![Demo](/img/demo.gif)](https://www.loom.com/embed/69b43d89c6ee43c8bc6ddc1e282854e3?autoplay=1)
+[<img src="/img/demo.gif" width="520px" />](https://www.loom.com/embed/69b43d89c6ee43c8bc6ddc1e282854e3?autoplay=1)
 
 ## Search
 
