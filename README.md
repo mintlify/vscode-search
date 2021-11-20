@@ -1,6 +1,6 @@
 <img src="/img/logo.png" alt="Mintlify" height="80"/>
 
-## Mintlify
+# Mintlify
 
 Simple as ⌘+F. Smart as Google. Get answers and discover functions in your organization's code.
 
@@ -10,9 +10,7 @@ Simple as ⌘+F. Smart as Google. Get answers and discover functions in your org
 
 Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
 
-For example if there is an image subfolder under your extension project workspace:
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+[<img src="/img/search.gif" width="520px" />](https://www.loom.com/embed/69b43d89c6ee43c8bc6ddc1e282854e3?autoplay=1)
 
 ## Ask
 
