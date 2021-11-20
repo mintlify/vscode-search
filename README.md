@@ -1,18 +1,18 @@
-# mintlify README
+<img src="/img/logo.png" alt="Mintlify" height="80"/>
+# Mintlify
 
-This is the README for your extension "mintlify". After writing up a brief description, we recommend including the following sections.
+Simple as ⌘+F. Smart as Google. Get answers and discover functions in your organization's code.
+[![Demo](/img/demo.gif)](https://www.loom.com/embed/69b43d89c6ee43c8bc6ddc1e282854e3?autoplay=1)
 
-## Features
+## Search
 
 Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
 
 For example if there is an image subfolder under your extension project workspace:
 
-\!\[feature X\]\(images/feature-x.png\)
-
 > Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
 
-## Requirements
+## Ask
 
 If you have any requirements or dependencies, add a section describing those and how to install and configure them.
 

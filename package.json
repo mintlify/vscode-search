@@ -1,7 +1,7 @@
 {
 	"name": "search",
 	"publisher": "mintlify",
-	"displayName": "",
+	"displayName": "Mintlify",
 	"description": "The VSCode extension for Mintlify",
 	"version": "0.0.1",
 	"engines": {
@@ -47,12 +47,12 @@
 			}
 		],
 		"productIconThemes": [
-      {
-        "id": "mintlify-icons",
-        "label": "Mintlify",
-        "path": "./icons/mintlify-product-icon-theme.json"
-      }
-    ]
+			{
+				"id": "mintlify-icons",
+				"label": "Mintlify",
+				"path": "./icons/mintlify-product-icon-theme.json"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
@@ -76,6 +76,7 @@
 		"@vscode/test-electron": "^1.6.2"
 	},
 	"dependencies": {
-		"axios": "^0.24.0"
+		"axios": "^0.24.0",
+		"vsce": "^2.3.0"
 	}
 }
