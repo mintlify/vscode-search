@@ -144,7 +144,7 @@ export const showStatusBarItem = () => {
 		vscode.StatusBarAlignment.Right,
 		0
 	);
-	mintlifyButton.text = '$(squirrel) Mintlify';
+	mintlifyButton.text = '$(search-save) Mintlify';
 	mintlifyButton.tooltip = 'Open Mintlify Settings';
 	mintlifyButton.command = 'mintlify.settings';
 	mintlifyButton.show();

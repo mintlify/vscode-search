@@ -67,7 +67,7 @@
 		"webpack-dev": "webpack --mode development --watch",
 		"package": "webpack --mode production --devtool hidden-source-map",
 		"test-compile": "tsc -p ./",
-		"local": "vsce package && code --install-extension search-0.0.4.vsix"
+		"local": "vsce package && code --install-extension search-0.0.4.vsix && rm search-0.0.4.vsix"
 	},
 	"devDependencies": {
 		"@types/glob": "^7.1.4",
