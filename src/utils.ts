@@ -13,19 +13,32 @@ export const SIGN_IN_BUTTON = 'Sign in';
 export const REQUEST_ACCESS_BUTTON = 'Request access';
 export const LOGOUT_BUTTON = 'Logout';
 
+const U18ARRAY_TO_MB = 1_048_576;
+const MAX_FILE_SIZE_IN_MB = 2;
+
 const traverseFiles = async (root: vscode.Uri, filesContent: File[]): Promise<File[]> => {
 	const files = await vscode.workspace.fs.readDirectory(root);
-	const filePromises = files.map(async (file, i) => {
+	const filePromises = files.map(async (file) => {
+		const directoryName = file[0];
+		const directoryPath = `${root}/${directoryName}`;
+		const directoryPathUri = vscode.Uri.parse(directoryPath);
 		// If filetype is a file
-		if (file[1] === 1) {
-			const filePath = `${root}/${file[0]}`;
-			const readFileUri = vscode.Uri.parse(filePath);
-			const readFileRaw = await vscode.workspace.fs.readFile(readFileUri);
-			const readFileContent = { path: filePath, filename: file[0], content: readFileRaw.toString()};
+		if (file[1] === 1 && isValidFiletype(directoryName)) {
+			const readFileRaw = await vscode.workspace.fs.readFile(directoryPathUri);
+			const readFileContent = { path: directoryPath, filename: directoryName, content: readFileRaw.toString()};
+
+			// Check file size to ensure that it's not too large
+			const fileSizeInMB = readFileRaw.length / U18ARRAY_TO_MB;
+			if (fileSizeInMB > MAX_FILE_SIZE_IN_MB) {
+				vscode.window.showWarningMessage(`${directoryName} is not being searched as the file is too large`);
+				return;
+			}
+
 			filesContent.push(readFileContent);
-		} else if (file[1] === 2 && isTraversablePath(file[0])) {
-			const newRoot = vscode.Uri.parse(`${root}/${file[0]}`);
-			await traverseFiles(newRoot, filesContent);
+		}
+		// If is folder
+		else if (file[1] === 2 && isTraversablePath(directoryName)) {
+			await traverseFiles(directoryPathUri, filesContent);
 		}
 
 	});
@@ -42,6 +55,26 @@ const isTraversablePath = (folderName: string): boolean => {
 	};
 
 	return !nonTraversable[folderName];
+};
+
+const isValidFiletype = (fileName: string): boolean => {
+	const fileExtensionRegex = /(?:\.([^.]+))?$/;
+	let fileExtension = fileExtensionRegex.exec(fileName)![1];
+
+	// Todo: Search non-code files
+	const nonValidExtensions: Record<string, boolean> = {
+		'gif': true,
+		'png': true,
+		'jpg': true,
+		'jpeg': true,
+		'vsix': true,
+		'mp3': true,
+		'mp4': true,
+		'woff': true,
+		'ttf': true,
+	};
+
+	return fileExtension != null && !nonValidExtensions[fileExtension];
 };
 
 export const ENTIRE_WORKSPACE_OPTION = 'Search entire workspace';
