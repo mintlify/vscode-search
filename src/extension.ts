@@ -116,7 +116,9 @@ export function activate(context: vscode.ExtensionContext) {
 						const files = await getFiles(option);
 						const searchRes: {
 								data: {
-									results: SearchResult[], objectID: string
+									results: SearchResult[],
+									objectID: string,
+									errors: string[]
 								}
 						} = await axios.post(MINT_SEARCH_RESULTS, {
 							files,
@@ -128,7 +130,11 @@ export function activate(context: vscode.ExtensionContext) {
 							maxBodyLength: Infinity,
 						});
 
-						const { results: searchResults, objectID } = searchRes.data;
+						const { results: searchResults, objectID, errors: searchErrors } = searchRes.data;
+						searchErrors.map((error: string) => {
+							vscode.window.showWarningMessage(error);
+						});
+
 						const resultItems = searchResults.length > 0 ? searchResults.map((result) => {
 							return {
 								label: result.content,
@@ -298,7 +304,13 @@ export function activate(context: vscode.ExtensionContext) {
 				return new Promise(async (resolve, reject) => {
 					try {
 						const files = await getFiles(option);
-						const searchRes = await axios.post(MINT_ASK_ANSWER, {
+						const searchRes: {
+							data: {
+								answer: string,
+								objectID: string,
+								errors: string[]
+							}
+						} = await axios.post(MINT_ASK_ANSWER, {
 							files,
 							question,
 							root,
@@ -308,7 +320,10 @@ export function activate(context: vscode.ExtensionContext) {
 							maxBodyLength: Infinity,
 						});
 
-						let { answer, objectID } = searchRes.data;
+						let { answer, objectID, errors } = searchRes.data;
+						errors.map((error) => {
+							vscode.window.showWarningMessage(error);
+						});
 						if (!answer) {
 							answer = 'No answer found';
 						}
