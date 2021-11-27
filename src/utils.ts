@@ -62,6 +62,7 @@ const isValidFiletype = (fileName: string): boolean => {
 	let fileExtension = fileExtensionRegex.exec(fileName)![1];
 
 	// Todo: Search non-code files
+	// Todo: Enable more non-valid extensions
 	const nonValidExtensions: Record<string, boolean> = {
 		'gif': true,
 		'png': true,
