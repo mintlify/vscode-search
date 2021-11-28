@@ -42,7 +42,11 @@
 			},
 			{
 				"command": "mintlify.refreshHistory",
-        "title": "Refresh Search History"
+        "title": "Refresh Search History",
+				"icon": {
+					"light": "./icons/refresh-light.svg",
+					"dark": "./icons/refresh-dark.svg"
+				}
 			}
 		],
 		"keybindings": [
@@ -78,6 +82,13 @@
 					"name": "History"
 				}
 			]
+		},
+		"menus": {
+			"view/title": [{
+				"command": "mintlify.refreshHistory",
+				"when": "view == history",
+				"group": "navigation"
+			}]
 		},
 		"productIconThemes": [
 			{

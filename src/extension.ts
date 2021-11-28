@@ -4,6 +4,7 @@ import { URLSearchParams } from 'url';
 import { getFiles, showErrorMessage, showInformationMessage,
 	showLoginMessage, showStatusBarItem,
 	showSettings,
+	getRootPath,
 	getOptionShort, ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON } from './utils';
@@ -55,8 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
 		const authToken = storageManager.getValue('authToken');
 
 		// Retrieve for identification
-		const workspaceRoot = vscode.workspace.workspaceFolders![0];
-		const root = workspaceRoot?.uri?.path;
+		const root = getRootPath();
 
 		searchPick.onDidChangeValue(async (value: string) => {
 			if (!value) {
@@ -117,8 +117,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const searchCommand = vscode.commands.registerCommand('mintlify.search', async (
 		{ search, option, onGetResults = () => {} }
 	) => {
-		const workspaceRoot = vscode.workspace.workspaceFolders![0];
-		const root = workspaceRoot?.uri?.path;
+		const root = getRootPath();
 
 		const optionShort = getOptionShort(option);
 

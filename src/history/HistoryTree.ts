@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import TimeAgo from 'javascript-time-ago';
 import axios from 'axios';
 import { MINT_SEARCH_HISTORY } from '../api';
-import { ENTIRE_WORKSPACE_OPTION } from '../utils';
+import { getRootPath, ENTIRE_WORKSPACE_OPTION } from '../utils';
 // @ts-ignore
 import en from 'javascript-time-ago/locale/en';
 
@@ -23,8 +23,10 @@ export default class HistoryProvider implements vscode.TreeDataProvider<SearchHi
     if (element) {
       return Promise.resolve([]);
     } else {
+      const root = getRootPath();
       const { data: { history } } = await axios.post(MINT_SEARCH_HISTORY, {
-        authToken: this.authToken
+        authToken: this.authToken,
+        root,
       });
       const searchHistory = history.map((search: { query: string, timestamp: string }) => {
         const relativeTime = timeAgo.format(Date.parse(search.timestamp), 'round') as string;

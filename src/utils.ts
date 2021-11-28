@@ -13,6 +13,13 @@ export const SIGN_IN_BUTTON = 'Sign in';
 export const REQUEST_ACCESS_BUTTON = 'Request access';
 export const LOGOUT_BUTTON = 'Logout';
 
+export const getRootPath = (): string => {
+	const workspaceRoot = vscode.workspace.workspaceFolders![0];
+	const root = workspaceRoot?.uri?.path;
+
+	return root;
+};
+
 const U18ARRAY_TO_MB = 1_048_576;
 const MAX_FILE_SIZE_IN_MB = 2;
 
