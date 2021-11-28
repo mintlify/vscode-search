@@ -7,10 +7,6 @@ export const MINT_SEARCH_AUTOCOMPLETE = `${MINTBASE}/search/autocomplete`;
 export const MINT_SEARCH_RESULTS = `${MINTBASE}/search/results`;
 export const MINT_SEARCH_FEEDBACK = `${MINTBASE}/search/feedback`;
 
-export const MINT_ASK_AUTOCOMPLETE = `${MINTBASE}/ask/autocomplete`;
-export const MINT_ASK_ANSWER = `${MINTBASE}/ask/answer`;
-export const MINT_ASK_FEEDBACK = `${MINTBASE}/ask/feedback`;
-
 export const MINT_USER_CODE = `${MINTBASE}/user/code`;
 
 // Authentication

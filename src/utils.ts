@@ -145,22 +145,18 @@ export const showErrorMessage = async (message: string, ...buttons: string[]) =>
 	}
 };
 
-const SEARCH_BUTTON = '🔎 Search';
-const ASK_BUTTON = '🎤 Ask';
+const SEARCH_BUTTON = '🔎 Search (⌘ + M)';
 
 export const showSettings = async (isLoggedIn: boolean) => {
 	if (!isLoggedIn) {
 		return showLoginMessage();
 	}
 	
-	const selectedButton = await vscode.window.showInformationMessage('🌿 Mintlify Settings', SEARCH_BUTTON, ASK_BUTTON, LOGOUT_BUTTON);
+	const selectedButton = await vscode.window.showInformationMessage('🌿 Mintlify Settings', SEARCH_BUTTON, LOGOUT_BUTTON);
 	let selectedCommand: string;
 	switch (selectedButton) {
 		case SEARCH_BUTTON:
 			selectedCommand = 'mintlify.search';
-			break;
-		case ASK_BUTTON:
-			selectedCommand = 'mintlify.ask';
 			break;
 		case LOGOUT_BUTTON:
 			selectedCommand = 'mintlify.logout';

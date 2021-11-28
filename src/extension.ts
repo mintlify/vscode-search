@@ -8,8 +8,7 @@ import { getFiles, showErrorMessage, showInformationMessage,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON } from './utils';
 import { LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
-	MINT_SEARCH_RESULTS, MINT_ASK_ANSWER, MINT_ASK_AUTOCOMPLETE,
-	MINT_ASK_FEEDBACK, MINT_SEARCH_FEEDBACK, MINT_USER_CODE } from './api';
+	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK, MINT_USER_CODE } from './api';
 
 type SearchResult = {
 	path: string;
@@ -117,6 +116,7 @@ export function activate(context: vscode.ExtensionContext) {
 						const searchRes: {
 								data: {
 									results: SearchResult[],
+									answer: string | null,
 									objectID: string,
 									errors: string[]
 								}
@@ -130,23 +130,33 @@ export function activate(context: vscode.ExtensionContext) {
 							maxBodyLength: Infinity,
 						});
 
-						const { results: searchResults, objectID, errors: searchErrors } = searchRes.data;
+						const { results: searchResults, answer, objectID, errors: searchErrors } = searchRes.data;
 						searchErrors.map((error: string) => {
 							vscode.window.showWarningMessage(error);
 						});
 
-						const resultItems = searchResults.length > 0 ? searchResults.map((result) => {
-							return {
-								label: result.content,
-								detail: result.filename
-							};
-						}) : [
+						let resultItems: vscode.QuickPickItem[] = [
 							{
 								label: '📭',
 								description: 'No results found. Try broadening your search',
 								alwaysShow: true,
 							}
 						];
+
+						if (searchResults.length > 0) {
+							resultItems = searchResults.map((result) => {
+								return {
+									label: '↦',
+									description: result.content,
+									detail: result.filename,
+								};
+							});
+
+							// Inject answer to the front
+							if (answer) {
+								resultItems = [{ label: `$(lightbulb) ${answer}` }, ...resultItems];
+							}
+						}
 						
 						searchPick.hide();
 
@@ -160,7 +170,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 						resultsPick.onDidChangeActive(async (activeItems) => {
 							const item = activeItems[0];
-							const itemContext = searchResults.find((result) => result.content === item.label);
+							const itemContext = searchResults.find((result) => result.content === item.description);
 
 							if (!itemContext) {return null;}
 
@@ -178,7 +188,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 						resultsPick.onDidChangeSelection(async (selectedItems) => {
 							const item = selectedItems[0];
-							const selectedIndex = searchResults.findIndex((result) => result.content === item.label);
+							const selectedIndex = searchResults.findIndex((result) => result.content === item.description);
 
 							if (selectedIndex === -1) {return;}
 
@@ -230,199 +240,6 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	const ask = vscode.commands.registerCommand('mintlify.ask', async () => {
-		const askPick = vscode.window.createQuickPick();
-		askPick.title = "Mint Ask (beta)";
-		askPick.placeholder = "What would you like to know?";
-		askPick.show();
-
-		// Retrieve tokens for auth
-		const authToken = storageManager.getValue('authToken');
-		// Retrieve for identification
-		const workspaceRoot = vscode.workspace.workspaceFolders![0];
-		const root = workspaceRoot?.uri?.path;
-
-		askPick.onDidChangeValue(async (value) => {
-			if (!value) {
-				return askPick.items = [];
-			}
-
-			let itemResults: vscode.QuickPickItem[] = [];
-			let autoSuggestions: string[] = [];
-			itemResults = [
-				{label: value, description: ENTIRE_WORKSPACE_OPTION },
-				{label: value, description: THIS_FILE_OPTION },
-			];
-
-			askPick.items = itemResults;
-
-			if (authToken) {
-				const { data: autoCompleteData }: {data: string[]} = await axios.post(MINT_ASK_AUTOCOMPLETE, {
-					query: value,
-					root,
-					authToken,
-				});
-
-				autoSuggestions = autoCompleteData;
-			}
-			const autoSuggestionResults = autoSuggestions.map((suggestion) => {
-				return {
-					label: suggestion,
-					alwaysShow: true,
-				};
-			});
-			itemResults = [
-				{label: value, description: ENTIRE_WORKSPACE_OPTION },
-				{label: value, description: THIS_FILE_OPTION },
-				...autoSuggestionResults
-			];
-
-			return askPick.items = itemResults;
-		});
-		askPick.onDidChangeSelection(async (selectedItems) => {
-			const selected = selectedItems[0];
-
-			if (!selected) {return;}
-
-			const { label: question, description: option } = selected;
-			if (!question) {
-				return null;
-			}
-
-			if (!authToken) {
-				return showLoginMessage();
-			}
-
-			askPick.value = question;
-			const optionShort = getOptionShort(option);
-
-			vscode.window.withProgress({
-				location: vscode.ProgressLocation.Notification,
-				title: `🎤 Mint answering from ${optionShort}`,
-			},
-			() => {
-				return new Promise(async (resolve, reject) => {
-					try {
-						const files = await getFiles(option);
-						const searchRes: {
-							data: {
-								answer: string,
-								objectID: string,
-								errors: string[]
-							}
-						} = await axios.post(MINT_ASK_ANSWER, {
-							files,
-							question,
-							root,
-							authToken
-						}, {
-							maxContentLength: Infinity,
-							maxBodyLength: Infinity,
-						});
-
-						let { answer, objectID, errors } = searchRes.data;
-						errors.map((error) => {
-							vscode.window.showWarningMessage(error);
-						});
-						if (!answer) {
-							answer = 'No answer found';
-						}
-
-						askPick.hide();
-
-						const answerPick = vscode.window.createQuickPick();
-						answerPick.title = "Mint Answer Results";
-						answerPick.placeholder = question;
-						answerPick.show();
-						const answerByLine = answer.replace(/(?![^\n]{1,64}$)([^\n]{1,64})\s/g, '$1\n').split('\n');
-						const itemsByLine =  answerByLine.map((line: string) => {
-							return {
-								label: line,
-								alwaysShow: true
-							};
-						});
-
-						answerPick.items = [...itemsByLine,
-						{
-							label: '👍',
-							description: 'Answer is useful',
-							alwaysShow: true,
-						},
-						{
-							label: '🤷',
-							description: 'Not enough information',
-							alwaysShow: true,
-						},
-						{
-							label: '🙅‍♂️',
-							description: 'Answer is incorrect',
-							alwaysShow: true,
-						}
-					];
-
-					answerPick.onDidChangeSelection(async (selectedItems) => {
-						const item = selectedItems[0];
-
-						if (!item) {return;}
-
-						let selectedFeedbackScore;
-						switch (item.label) {
-							case '🙅‍♂️':
-								selectedFeedbackScore = 0;
-								break;
-							case '👍':
-								selectedFeedbackScore = 1;
-								break;
-							case '🤷':
-								selectedFeedbackScore = 2;
-									break;
-							default:
-								selectedFeedbackScore = null;
-								break;
-						}
-
-						try {
-							await axios.put(MINT_ASK_FEEDBACK, {
-								authToken,
-								objectID,
-								feedback: selectedFeedbackScore,
-							});
-
-							vscode.window.showInformationMessage('Feedback submitted');
-						}
-						catch (error: any) {
-							const backendError = error?.response?.data;
-							if (backendError) {
-								const { shouldPromptWaitlist } = backendError;
-								showErrorMessage(backendError.error,
-									shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
-									shouldPromptWaitlist && LOGOUT_BUTTON
-								);
-							}
-						}
-						finally {
-							answerPick.dispose();
-						}
-					});
-
-					resolve('Complete ask');
-					}
-					catch (error: any) {
-						reject('Failed');
-						const backendError = error?.response?.data;
-						if (backendError) {
-							const { shouldPromptWaitlist } = backendError;
-							showErrorMessage(backendError.error,
-								shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
-								shouldPromptWaitlist && LOGOUT_BUTTON
-							);
-						}
-					}
-				});
-			});
-		});
-	});
-
 	const logout = vscode.commands.registerCommand('mintlify.logout', async () => {
 		vscode.env.openExternal(vscode.Uri.parse(LOGOUT_URI));
 	});
@@ -453,7 +270,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-	context.subscriptions.push(search, ask, logout, settings);
+	context.subscriptions.push(search, logout, settings);
 }
 
 // this method is called when your extension is deactivated

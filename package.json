@@ -17,7 +17,6 @@
 	"activationEvents": [
 		"onStartupFinished",
 		"onCommand:mintlify.search",
-		"onCommand:mintlify.ask",
 		"onCommand:mintlify.logout",
 		"onCommand:mintlify.settings"
 	],
@@ -27,10 +26,6 @@
 			{
 				"command": "mintlify.search",
 				"title": "Mint Search"
-			},
-			{
-				"command": "mintlify.ask",
-				"title": "Mint Ask"
 			},
 			{
 				"command": "mintlify.logout",
@@ -43,14 +38,9 @@
 		],
 		"keybindings": [
 			{
-				"key": "ctrl+;",
-				"mac": "cmd+;",
+				"key": "ctrl+m",
+				"mac": "cmd+m",
 				"command": "mintlify.search"
-			},
-			{
-				"key": "ctrl+'",
-				"mac": "cmd+'",
-				"command": "mintlify.ask"
 			}
 		],
 		"productIconThemes": [
