@@ -40,6 +40,9 @@ export function activate(context: vscode.ExtensionContext) {
 		showLoginMessage();
 	}
 
+	// Get history
+	const searchHistoryTree = new HistoryProviderProvider(authToken);
+
 	showStatusBarItem();
 
 	const searchbar = vscode.commands.registerCommand('mintlify.searchbar', async () => {
@@ -50,6 +53,7 @@ export function activate(context: vscode.ExtensionContext) {
 		
 		// Retrieve tokens for auth
 		const authToken = storageManager.getValue('authToken');
+
 		// Retrieve for identification
 		const workspaceRoot = vscode.workspace.workspaceFolders![0];
 		const root = workspaceRoot?.uri?.path;
@@ -256,6 +260,8 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 					});
 
+					vscode.commands.executeCommand('mintlify.refreshHistory');
+
 					resolve('Completed search');
 				} catch (error: any) {
 					reject('Failed');
@@ -270,6 +276,10 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 			});
 		});
+	});
+
+	const refreshHistory = vscode.commands.registerCommand('mintlify.refreshHistory', async () => {
+		searchHistoryTree.refresh();
 	});
 
 	const logout = vscode.commands.registerCommand('mintlify.logout', async () => {
@@ -303,10 +313,10 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
 	vscode.window.createTreeView('history', {
-		treeDataProvider: new HistoryProviderProvider(authToken)
+		treeDataProvider: searchHistoryTree
 	});
 
-	context.subscriptions.push(searchbar, searchCommand, logout, settings);
+	context.subscriptions.push(searchbar, searchCommand, refreshHistory, logout, settings);
 }
 
 // this method is called when your extension is deactivated

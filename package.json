@@ -39,6 +39,10 @@
 			{
 				"command": "mintlify.settings",
 				"title": "Open Mintlify Settings"
+			},
+			{
+				"command": "mintlify.refreshHistory",
+        "title": "Refresh Search History"
 			}
 		],
 		"keybindings": [

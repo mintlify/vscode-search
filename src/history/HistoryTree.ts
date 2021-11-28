@@ -33,6 +33,13 @@ export default class HistoryProvider implements vscode.TreeDataProvider<SearchHi
       return Promise.resolve(searchHistory);
     }
   }
+
+  private _onDidChangeTreeData: vscode.EventEmitter<SearchHistory | undefined | null | void> = new vscode.EventEmitter<SearchHistory | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<SearchHistory | undefined | null | void> = this._onDidChangeTreeData.event;
+
+  refresh(): void {
+    this._onDidChangeTreeData.fire();
+  }
 }
 
 class SearchHistory extends vscode.TreeItem {
