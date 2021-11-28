@@ -156,7 +156,7 @@ export const showSettings = async (isLoggedIn: boolean) => {
 	let selectedCommand: string;
 	switch (selectedButton) {
 		case SEARCH_BUTTON:
-			selectedCommand = 'mintlify.search';
+			selectedCommand = 'mintlify.searchbar';
 			break;
 		case LOGOUT_BUTTON:
 			selectedCommand = 'mintlify.logout';

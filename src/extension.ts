@@ -42,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	showStatusBarItem();
 
-	const search = vscode.commands.registerCommand('mintlify.search', async () => {
+	const searchbar = vscode.commands.registerCommand('mintlify.searchbar', async () => {
 		const searchPick = vscode.window.createQuickPick();
 		searchPick.title = "Mint Search";
 		searchPick.placeholder = "What would you like to find?";
@@ -104,161 +104,171 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 
 			searchPick.value = search;
-			const optionShort = getOptionShort(option);
+			vscode.commands.executeCommand('mintlify.search', { search, option, onGetResults: () => {
+				searchPick.hide();
+			}});
+		});
+	});
 
-			vscode.window.withProgress({
-				location: vscode.ProgressLocation.Notification,
-				title: `🔎 Mint searching across ${optionShort}`,
-			},
-			() => {
-				return new Promise(async (resolve, reject) => {
-					try {
-						const files = await getFiles(option);
-						const searchRes: {
-								data: {
-									results: SearchResult[],
-									answer: string | null,
-									objectID: string,
-									errors: string[]
-								}
-						} = await axios.post(MINT_SEARCH_RESULTS, {
-							files,
-							search,
-							root,
-							authToken
-						}, {
-							maxContentLength: Infinity,
-							maxBodyLength: Infinity,
-						});
+	const searchCommand = vscode.commands.registerCommand('mintlify.search', async (
+		{ search, option, onGetResults = () => {} }
+	) => {
+		const workspaceRoot = vscode.workspace.workspaceFolders![0];
+		const root = workspaceRoot?.uri?.path;
 
-						const { results: searchResults, answer, objectID, errors: searchErrors } = searchRes.data;
-						searchErrors.map((error: string) => {
-							vscode.window.showWarningMessage(error);
-						});
+		const optionShort = getOptionShort(option);
 
-						let resultItems: vscode.QuickPickItem[] = [
-							{
-								label: '📭',
-								description: 'No results found. Try broadening your search',
-								alwaysShow: true,
+		vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: `🔎 Mint searching across ${optionShort}`,
+		},
+		() => {
+			return new Promise(async (resolve, reject) => {
+				try {
+					const files = await getFiles(option);
+					const searchRes: {
+							data: {
+								results: SearchResult[],
+								answer: string | null,
+								objectID: string,
+								errors: string[]
 							}
-						];
+					} = await axios.post(MINT_SEARCH_RESULTS, {
+						files,
+						search,
+						root,
+						authToken
+					}, {
+						maxContentLength: Infinity,
+						maxBodyLength: Infinity,
+					});
 
-						let lastContent = '';
-						let spacesId = '';
-						const searchResultsWithSpacesId: SearchResult[] = searchResults.map((result) => {
-							if (result.content === lastContent) {
-								spacesId += ' ';
-							} else {
-								spacesId = '';
-							}
-							
-							lastContent = result.content;
+					onGetResults();
 
+					const { results: searchResults, answer, objectID, errors: searchErrors } = searchRes.data;
+					searchErrors.map((error: string) => {
+						vscode.window.showWarningMessage(error);
+					});
+
+					let resultItems: vscode.QuickPickItem[] = [
+						{
+							label: '📭',
+							description: 'No results found. Try broadening your search',
+							alwaysShow: true,
+						}
+					];
+
+					let lastContent = '';
+					let spacesId = '';
+					const searchResultsWithSpacesId: SearchResult[] = searchResults.map((result) => {
+						if (result.content === lastContent) {
+							spacesId += ' ';
+						} else {
+							spacesId = '';
+						}
+						
+						lastContent = result.content;
+
+						return {
+							...result,
+							content: result.content + spacesId,
+						};
+					});
+
+					if (searchResultsWithSpacesId.length > 0) {
+						resultItems = searchResultsWithSpacesId.map((result) => {
 							return {
-								...result,
-								content: result.content + spacesId,
+								label: '↦',
+								description: result.content,
+								detail: result.filename,
 							};
 						});
 
-						if (searchResultsWithSpacesId.length > 0) {
-							resultItems = searchResultsWithSpacesId.map((result) => {
-								return {
-									label: '↦',
-									description: result.content,
-									detail: result.filename,
-								};
-							});
-
-							// Inject answer to the front
-							if (answer) {
-								resultItems = [{ label: `$(lightbulb) ${answer}` }, ...resultItems];
-							}
-						}
-						
-						searchPick.hide();
-
-						const resultsPick = vscode.window.createQuickPick();
-						resultsPick.items = resultItems;
-						resultsPick.title = "Mint Search Results";
-						resultsPick.placeholder = search;
-						resultsPick.matchOnDescription = true;
-						resultsPick.matchOnDetail = true;
-						resultsPick.show();
-
-						resultsPick.onDidChangeActive(async (activeItems) => {
-							const item = activeItems[0];
-							const itemContext = searchResultsWithSpacesId.find(
-								(searchResult) => searchResult.content === item.description && searchResult.filename === item.detail
-							);
-
-							if (!itemContext) {return null;}
-
-							const { path, lineStart, lineEnd } = itemContext;
-							const filePathUri = vscode.Uri.parse(path);
-							const startPosition = new vscode.Position(lineStart, 0);
-							const endPosition = new vscode.Position(lineEnd, 9999);
-							const selectedRange = new vscode.Range(startPosition, endPosition);
-
-							await vscode.window.showTextDocument(filePathUri, {
-								selection: selectedRange,
-								preserveFocus: true,
-							});
-						});
-
-						resultsPick.onDidChangeSelection(async (selectedItems) => {
-							const item = selectedItems[0];
-							const selectedIndex = searchResultsWithSpacesId.findIndex(
-								(result) => result.content === item.description && result.filename === item.detail
-							);
-
-							if (selectedIndex === -1) {return;}
-
-							const selectedItem = searchResultsWithSpacesId[selectedIndex];
-
-							const { path, lineStart, lineEnd } = selectedItem;
-							const filePathUri = vscode.Uri.parse(path);
-							const startPosition = new vscode.Position(lineStart, 0);
-							const endPosition = new vscode.Position(lineEnd, 9999);
-							const selectedRange = new vscode.Range(startPosition, endPosition);
-							await vscode.window.showTextDocument(filePathUri, {
-								selection: selectedRange,
-							});
-
-							try {
-								axios.put(MINT_SEARCH_FEEDBACK, {
-									authToken,
-									objectID,
-									engagedIndex: selectedIndex,
-								});
-							}
-							catch (error: any) {
-								const backendError = error?.response?.data;
-								if (backendError) {
-									const { shouldPromptWaitlist } = backendError;
-									showErrorMessage(backendError.error,
-										shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
-										shouldPromptWaitlist && LOGOUT_BUTTON
-									);
-								}
-							}
-						});
-
-						resolve('Completed search');
-					} catch (error: any) {
-						reject('Failed');
-						const backendError = error?.response?.data;
-						if (backendError) {
-							const { shouldPromptWaitlist } = backendError;
-							showErrorMessage(backendError.error,
-								shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
-								shouldPromptWaitlist && LOGOUT_BUTTON
-							);
+						// Inject answer to the front
+						if (answer) {
+							resultItems = [{ label: `$(lightbulb) ${answer}` }, ...resultItems];
 						}
 					}
-				});
-			}
-			);
+
+					const resultsPick = vscode.window.createQuickPick();
+					resultsPick.items = resultItems;
+					resultsPick.title = "Mint Search Results";
+					resultsPick.placeholder = search;
+					resultsPick.matchOnDescription = true;
+					resultsPick.matchOnDetail = true;
+					resultsPick.show();
+
+					resultsPick.onDidChangeActive(async (activeItems) => {
+						const item = activeItems[0];
+						const itemContext = searchResultsWithSpacesId.find(
+							(searchResult) => searchResult.content === item.description && searchResult.filename === item.detail
+						);
+
+						if (!itemContext) {return null;}
+
+						const { path, lineStart, lineEnd } = itemContext;
+						const filePathUri = vscode.Uri.parse(path);
+						const startPosition = new vscode.Position(lineStart, 0);
+						const endPosition = new vscode.Position(lineEnd, 9999);
+						const selectedRange = new vscode.Range(startPosition, endPosition);
+
+						await vscode.window.showTextDocument(filePathUri, {
+							selection: selectedRange,
+							preserveFocus: true,
+						});
+					});
+
+					resultsPick.onDidChangeSelection(async (selectedItems) => {
+						const item = selectedItems[0];
+						const selectedIndex = searchResultsWithSpacesId.findIndex(
+							(result) => result.content === item.description && result.filename === item.detail
+						);
+
+						if (selectedIndex === -1) {return;}
+
+						const selectedItem = searchResultsWithSpacesId[selectedIndex];
+
+						const { path, lineStart, lineEnd } = selectedItem;
+						const filePathUri = vscode.Uri.parse(path);
+						const startPosition = new vscode.Position(lineStart, 0);
+						const endPosition = new vscode.Position(lineEnd, 9999);
+						const selectedRange = new vscode.Range(startPosition, endPosition);
+						await vscode.window.showTextDocument(filePathUri, {
+							selection: selectedRange,
+						});
+
+						try {
+							axios.put(MINT_SEARCH_FEEDBACK, {
+								authToken,
+								objectID,
+								engagedIndex: selectedIndex,
+							});
+						}
+						catch (error: any) {
+							const backendError = error?.response?.data;
+							if (backendError) {
+								const { shouldPromptWaitlist } = backendError;
+								showErrorMessage(backendError.error,
+									shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
+									shouldPromptWaitlist && LOGOUT_BUTTON
+								);
+							}
+						}
+					});
+
+					resolve('Completed search');
+				} catch (error: any) {
+					reject('Failed');
+					const backendError = error?.response?.data;
+					if (backendError) {
+						const { shouldPromptWaitlist } = backendError;
+						showErrorMessage(backendError.error,
+							shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
+							shouldPromptWaitlist && LOGOUT_BUTTON
+						);
+					}
+				}
+			});
 		});
 	});
 
@@ -296,7 +306,7 @@ export function activate(context: vscode.ExtensionContext) {
 		treeDataProvider: new HistoryProviderProvider(authToken)
 	});
 
-	context.subscriptions.push(search, logout, settings);
+	context.subscriptions.push(searchbar, searchCommand, logout, settings);
 }
 
 // this method is called when your extension is deactivated
