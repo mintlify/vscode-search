@@ -143,8 +143,25 @@ export function activate(context: vscode.ExtensionContext) {
 							}
 						];
 
-						if (searchResults.length > 0) {
-							resultItems = searchResults.map((result) => {
+						let lastContent = '';
+						let spacesId = '';
+						const searchResultsWithSpacesId: SearchResult[] = searchResults.map((result) => {
+							if (result.content === lastContent) {
+								spacesId += ' ';
+							} else {
+								spacesId = '';
+							}
+							
+							lastContent = result.content;
+
+							return {
+								...result,
+								content: result.content + spacesId,
+							};
+						});
+
+						if (searchResultsWithSpacesId.length > 0) {
+							resultItems = searchResultsWithSpacesId.map((result) => {
 								return {
 									label: '↦',
 									description: result.content,
@@ -170,7 +187,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 						resultsPick.onDidChangeActive(async (activeItems) => {
 							const item = activeItems[0];
-							const itemContext = searchResults.find((result) => result.content === item.description);
+							const itemContext = searchResultsWithSpacesId.find(
+								(searchResult) => searchResult.content === item.description && searchResult.filename === item.detail
+							);
 
 							if (!itemContext) {return null;}
 
@@ -188,11 +207,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 						resultsPick.onDidChangeSelection(async (selectedItems) => {
 							const item = selectedItems[0];
-							const selectedIndex = searchResults.findIndex((result) => result.content === item.description);
+							const selectedIndex = searchResultsWithSpacesId.findIndex(
+								(result) => result.content === item.description && result.filename === item.detail
+							);
 
 							if (selectedIndex === -1) {return;}
 
-							const selectedItem = searchResults[selectedIndex];
+							const selectedItem = searchResultsWithSpacesId[selectedIndex];
 
 							const { path, lineStart, lineEnd } = selectedItem;
 							const filePathUri = vscode.Uri.parse(path);
