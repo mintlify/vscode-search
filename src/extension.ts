@@ -41,9 +41,6 @@ export function activate(context: vscode.ExtensionContext) {
 		showLoginMessage();
 	}
 
-	// Get history
-	const searchHistoryTree = new HistoryProviderProvider(authToken);
-
 	showStatusBarItem();
 
 	const searchbar = vscode.commands.registerCommand('mintlify.searchbar', async () => {
@@ -118,7 +115,8 @@ export function activate(context: vscode.ExtensionContext) {
 		{ search, option, onGetResults = () => {} }
 	) => {
 		const root = getRootPath();
-
+		// Retrieve tokens again to use latest
+		const authToken = storageManager.getValue('authToken');
 		const optionShort = getOptionShort(option);
 
 		vscode.window.withProgress({
@@ -278,8 +276,17 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	const refreshHistory = vscode.commands.registerCommand('mintlify.refreshHistory', async () => {
-		searchHistoryTree.refresh();
+		const authToken = storageManager.getValue('authToken');
+		// Get history
+		const searchHistoryTree = new HistoryProviderProvider(authToken);
+		vscode.window.createTreeView('history', {
+			treeDataProvider: searchHistoryTree
+		});
 	});
+
+	const refreshHistoryTree = () => {
+		vscode.commands.executeCommand('mintlify.refreshHistory');
+	};
 
 	const logout = vscode.commands.registerCommand('mintlify.logout', async () => {
 		vscode.env.openExternal(vscode.Uri.parse(LOGOUT_URI));
@@ -300,20 +307,23 @@ export function activate(context: vscode.ExtensionContext) {
 					const authResponse = await axios.post(MINT_USER_CODE, {code});
 					const { authToken } = authResponse.data;
 					storageManager.setValue('authToken', authToken);
+					refreshHistoryTree();
+
 					showInformationMessage('Logged in to Mintlify');
 				} catch (error) {
 					console.log({error});
 				}
       } else if (uri.path === '/logout') {
 				storageManager.setValue('authToken', null);
+				refreshHistoryTree();
+
 				showLoginMessage();
 			}
     }
   });
 
-	vscode.window.createTreeView('history', {
-		treeDataProvider: searchHistoryTree
-	});
+	// Generate historyTree
+	refreshHistoryTree();
 
 	context.subscriptions.push(searchbar, searchCommand, refreshHistory, logout, settings);
 }
