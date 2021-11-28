@@ -1,16 +1,16 @@
-# 🌿 Mintlify Search
+# 🌿 Mintlify Search - ⌘ + M
 
-Simple as ⌘+F. Smart as Google. Get answers and discover functions in your organization's code.
+Simple as ⌘ + F. Smart as Google. Get answers and discover functions in your organization's code.
 
 [![Demo](/img/demo-large.gif)](https://www.loom.com/embed/69b43d89c6ee43c8bc6ddc1e282854e3?autoplay=1)
 
-## Search - ⌘ + ;
+## Search
 
 Find code snippets by searching exactly what you're looking for in english
 
 <img src="/img/search.gif" width="520px" />
 
-## Ask - ⌘ + '
+## Ask
 
 Get answers to your questions about the code
 
