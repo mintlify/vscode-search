@@ -43,6 +43,34 @@
 				"command": "mintlify.search"
 			}
 		],
+
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "mintlify",
+					"title": "Mintlify",
+					"icon": "img/outline.png"
+				}
+			]
+		},
+		"viewsWelcome": [
+			{
+				"view": "search",
+				"contents": "[🔎 Search (⌘ + M)](command:mintlify.search)"
+			}
+		],
+		"views": {
+			"mintlify": [
+				{
+					"id": "search",
+					"name": "Search Engine"
+				},
+				{
+					"id": "history",
+					"name": "History"
+				}
+			]
+		},
 		"productIconThemes": [
 			{
 				"id": "mintlify-icons",

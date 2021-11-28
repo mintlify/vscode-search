@@ -9,6 +9,7 @@ import { getFiles, showErrorMessage, showInformationMessage,
 	LOGOUT_BUTTON } from './utils';
 import { LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK, MINT_USER_CODE } from './api';
+import HistoryProviderProvider from './history/HistoryTree';
 
 type SearchResult = {
 	path: string;
@@ -34,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Set storage manager for auth tokens
 	const storageManager = new LocalStorageService(context.globalState);
 
-	const authToken = storageManager.getValue('authToken');
+	const authToken: string | null = storageManager.getValue('authToken');
 	if (!authToken) {
 		showLoginMessage();
 	}
@@ -290,6 +291,10 @@ export function activate(context: vscode.ExtensionContext) {
 			}
     }
   });
+
+	vscode.window.createTreeView('history', {
+		treeDataProvider: new HistoryProviderProvider(authToken)
+	});
 
 	context.subscriptions.push(search, logout, settings);
 }
