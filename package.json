@@ -4,7 +4,7 @@
 	"icon": "img/icon.png",
 	"publisher": "mintlify",
 	"displayName": "Mintlify",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"repository": {
 		"url": "https://github.com/mintlify/vscode"
 	},
@@ -84,11 +84,17 @@
 			]
 		},
 		"menus": {
-			"view/title": [{
-				"command": "mintlify.refreshHistory",
-				"when": "view == history",
-				"group": "navigation"
-			}]
+			"view/title": [
+				{
+					"command": "mintlify.refreshHistory",
+					"when": "view == history",
+					"group": "navigation"
+				},
+				{
+					"command": "mintlify.logout",
+					"when": "view == search"
+				}
+			]
 		},
 		"productIconThemes": [
 			{
@@ -102,7 +108,7 @@
 		"webpack": "webpack --mode development",
 		"package": "webpack --mode production --devtool hidden-source-map",
 		"test-compile": "tsc -p ./",
-		"dev": "npm run webpack && vsce package && code --install-extension search-0.1.0.vsix && rm search-0.1.0.vsix",
+		"dev": "npm run webpack && vsce package && code --install-extension search-0.1.1.vsix && rm search-0.1.1.vsix",
 		"publish": "npm run package && vsce publish"
 	},
 	"devDependencies": {
