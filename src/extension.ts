@@ -187,7 +187,14 @@ export function activate(context: vscode.ExtensionContext) {
 
 						// Inject answer to the front
 						if (answer) {
-							resultItems = [{ label: `$(lightbulb) ${answer}` }, ...resultItems];
+							const answerByLine = answer.replace(/(?![^\n]{1,64}$)([^\n]{1,64})\s/g, '$1\n').split('\n');
+							const itemsByLine =  answerByLine.map((line: string, i: number) => {
+								return {
+									label: i === 0 ? `$(lightbulb) ${line}` : line,
+									alwaysShow: true
+								};
+							});
+							resultItems = [...itemsByLine, ...resultItems];
 						}
 					}
 
@@ -310,8 +317,8 @@ export function activate(context: vscode.ExtensionContext) {
 					refreshHistoryTree();
 
 					showInformationMessage('Logged in to Mintlify');
-				} catch (error) {
-					console.log({error});
+				} catch {
+					vscode.window.showErrorMessage('Error authenticating user');
 				}
       } else if (uri.path === '/logout') {
 				storageManager.setValue('authToken', null);
