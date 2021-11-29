@@ -10,7 +10,7 @@ Find code snippets by searching exactly what you're looking for in english
 
 <img src="/img/search.gif" width="520px" />
 
-## Ask
+## Ask Questions
 
 Get answers to your questions about the code
 
