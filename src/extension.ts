@@ -176,6 +176,8 @@ export function activate(context: vscode.ExtensionContext) {
 						};
 					});
 
+					let answerBoxLineCount = 0;
+
 					if (searchResultsWithSpacesId.length > 0) {
 						resultItems = searchResultsWithSpacesId.map((result) => {
 							return {
@@ -188,6 +190,7 @@ export function activate(context: vscode.ExtensionContext) {
 						// Inject answer to the front
 						if (answer) {
 							const answerByLine = answer.replace(/(?![^\n]{1,64}$)([^\n]{1,64})\s/g, '$1\n').split('\n');
+							answerBoxLineCount = answerByLine.length;
 							const itemsByLine =  answerByLine.map((line: string, i: number) => {
 								return {
 									label: i === 0 ? `$(lightbulb) ${line}` : line,
@@ -227,16 +230,30 @@ export function activate(context: vscode.ExtensionContext) {
 					});
 
 					resultsPick.onDidChangeSelection(async (selectedItems) => {
-						const item = selectedItems[0];
-						const selectedIndex = searchResultsWithSpacesId.findIndex(
-							(result) => result.content === item.description && result.filename === item.detail
+						const selectedItem = selectedItems[0];
+						let selectedIndex = resultsPick.items.findIndex(
+							(result) => result.label === selectedItem.label
+							&& result.description === selectedItem.description
+							&& result.detail === selectedItem.detail
 						);
 
-						if (selectedIndex === -1) {return;}
+						const isAnswerBoxSelected = selectedIndex < answerBoxLineCount;
+						if (isAnswerBoxSelected) {
+							axios.put(MINT_SEARCH_FEEDBACK, {
+								authToken,
+								objectID,
+								isAnswerBoxSelected
+							});
+							return;
+						}
 
-						const selectedItem = searchResultsWithSpacesId[selectedIndex];
+						if (answerBoxLineCount > 0) {
+							selectedIndex -= answerBoxLineCount;
+						}
 
-						const { path, lineStart, lineEnd } = selectedItem;
+						const selectedResult = searchResultsWithSpacesId[selectedIndex];
+
+						const { path, lineStart, lineEnd } = selectedResult;
 						const filePathUri = vscode.Uri.parse(path);
 						const startPosition = new vscode.Position(lineStart, 0);
 						const endPosition = new vscode.Position(lineEnd, 9999);
