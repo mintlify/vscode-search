@@ -82,25 +82,26 @@ const isTraversablePath = (folderName: string): boolean => {
 	return !nonTraversable[folderName];
 };
 
+// Remove duplicate on backend
 const isValidFiletype = (fileName: string): boolean => {
 	const fileExtensionRegex = /(?:\.([^.]+))?$/;
-	let fileExtension = fileExtensionRegex.exec(fileName)![1];
+	const fileExtension = fileExtensionRegex.exec(fileName)![1];
 
 	// Todo: Search non-code files
-	// Todo: Enable more non-valid extensions
-	const nonValidExtensions: Record<string, boolean> = {
-		'gif': true,
-		'png': true,
-		'jpg': true,
-		'jpeg': true,
-		'vsix': true,
-		'mp3': true,
-		'mp4': true,
-		'woff': true,
-		'ttf': true,
+	const validExtensions: Record<string, boolean> = {
+		'ts': true,
+		'tsx': true,
+		'js': true,
+		'jsx': true,
+		'html': true,
+		'css': true,
+		'py': true,
+		'vue': true,
+		'md': true,
+		'env': true,
 	};
 
-	return fileExtension != null && !nonValidExtensions[fileExtension];
+	return fileExtension != null && validExtensions[fileExtension];
 };
 
 export const ENTIRE_WORKSPACE_OPTION = 'Search entire workspace';
