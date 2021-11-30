@@ -7,9 +7,10 @@ import { getFiles, showErrorMessage, showInformationMessage,
 	getRootPath,
 	getOptionShort, ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
-	LOGOUT_BUTTON } from './utils';
+	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './utils';
 import { LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
-	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK, MINT_USER_CODE } from './api';
+	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK, MINT_USER_CODE,
+	MINT_SEARCH_ANSWER_BOX_FEEDBACK } from './api';
 import HistoryProviderProvider from './history/HistoryTree';
 
 type SearchResult = {
@@ -244,6 +245,39 @@ export function activate(context: vscode.ExtensionContext) {
 								objectID,
 								isAnswerBoxSelected
 							});
+
+							const { useful, notEnoughInfo, incorrect } = ANSWER_BOX_FEEDBACK.selections;
+							vscode.window.showInformationMessage(ANSWER_BOX_FEEDBACK.label, useful.text, notEnoughInfo.text, incorrect.text)
+								.then(async (selection) => {
+									let answerBoxFeedbackScore;
+									switch (selection) {
+										case useful.text:
+											answerBoxFeedbackScore = useful.score;
+											break;
+										case notEnoughInfo.text:
+											answerBoxFeedbackScore = notEnoughInfo.score;
+											break;
+										case incorrect.text:
+											answerBoxFeedbackScore = incorrect.score;
+											break;
+										default:
+											break;
+									}
+
+									try {
+										await axios.put(MINT_SEARCH_ANSWER_BOX_FEEDBACK, {
+											authToken,
+											objectID,
+											score: answerBoxFeedbackScore
+										});
+	
+										vscode.window.showInformationMessage('Your feedback has been submitted');
+									} catch {
+										vscode.window.showErrorMessage('An error has occurred while submitting feedback');
+									}
+								});
+							
+							resultsPick.hide();
 							return;
 						}
 
