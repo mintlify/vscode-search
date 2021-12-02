@@ -368,7 +368,8 @@ export function activate(context: vscode.ExtensionContext) {
 					refreshHistoryTree();
 
 					showInformationMessage('Logged in to Mintlify');
-				} catch {
+				} catch (err) {
+					console.log(err);
 					vscode.window.showErrorMessage('Error authenticating user');
 				}
       } else if (uri.path === '/logout') {
