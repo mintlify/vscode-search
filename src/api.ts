@@ -21,3 +21,5 @@ const returnToURI = 'vscode://mintlify.search/logout';
 
 export const LOGIN_URI = `${auth0URI}/authorize?response_type=${responseType}&client_id=${clientId}&redirect_uri=${redirectURI}&scope=${scope}`;
 export const LOGOUT_URI = `${auth0URI}/v2/logout?client_id=${clientId}&returnTo=${returnToURI}`;
+
+export const REQUEST_ACCESS_URI = 'https://mintlify.com/start-minting';

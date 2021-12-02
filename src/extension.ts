@@ -5,9 +5,10 @@ import { getFiles, showErrorMessage, showInformationMessage,
 	showLoginMessage, showStatusBarItem,
 	showSettings,
 	getRootPath,
-	getOptionShort, ENTIRE_WORKSPACE_OPTION,
+	getOptionShort, configUserSettings } from './utils';
+import { ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
-	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './utils';
+	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './content';
 import { LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK, MINT_USER_CODE,
 	MINT_SEARCH_ANSWER_BOX_FEEDBACK } from './api';
@@ -34,15 +35,16 @@ class LocalStorageService {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+	// Set default settings
+	configUserSettings();
+	showStatusBarItem();
+
 	// Set storage manager for auth tokens
 	const storageManager = new LocalStorageService(context.globalState);
-
 	const authToken: string | null = storageManager.getValue('authToken');
 	if (!authToken) {
 		showLoginMessage();
 	}
-
-	showStatusBarItem();
 
 	const searchbar = vscode.commands.registerCommand('mintlify.searchbar', async () => {
 		const searchPick = vscode.window.createQuickPick();

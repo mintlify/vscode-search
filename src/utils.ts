@@ -1,34 +1,13 @@
 import * as vscode from 'vscode';
-import { LOGIN_URI } from './api';
+import { LOGIN_URI, REQUEST_ACCESS_URI } from './api';
+import { ENTIRE_WORKSPACE_OPTION,
+	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
+	LOGOUT_BUTTON, SIGN_IN_BUTTON } from './content';
 
 export type File = {
 	path: string;
 	filename: string;
 	content: string;
-};
-
-export const REQUEST_ACCESS_URI = 'https://mintlify.com/start-minting';
-
-export const SIGN_IN_BUTTON = 'Sign in';
-export const REQUEST_ACCESS_BUTTON = 'Request access';
-export const LOGOUT_BUTTON = 'Logout';
-
-export const ANSWER_BOX_FEEDBACK = {
-	label: 'How would you rate the answer?',
-	selections: {
-		useful: {
-			text: '👍 Useful',
-			score: 1
-		},
-		notEnoughInfo: {
-			text: '🤷 Not enough info',
-			score: 0,
-		},
-		incorrect: {
-			text: '🙅‍♂️ Incorrect',
-			score: -1,
-		}
-	}
 };
 
 export const getRootPath = (): string => {
@@ -103,9 +82,6 @@ const isValidFiletype = (fileName: string): boolean => {
 
 	return fileExtension != null && validExtensions[fileExtension];
 };
-
-export const ENTIRE_WORKSPACE_OPTION = 'Search entire workspace';
-export const THIS_FILE_OPTION = 'Search this file';
 
 export const getFiles = async (option: string = ENTIRE_WORKSPACE_OPTION): Promise<File[]> => {
 	if (option === ENTIRE_WORKSPACE_OPTION) {
@@ -204,4 +180,9 @@ export const showStatusBarItem = () => {
 	mintlifyButton.tooltip = 'Open Mintlify Settings';
 	mintlifyButton.command = 'mintlify.settings';
 	mintlifyButton.show();
+};
+
+export const configUserSettings = () => {
+	const config = vscode.workspace.getConfiguration('http');
+	config.update('systemCertificates', false, true);
 };
