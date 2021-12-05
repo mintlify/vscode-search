@@ -3,6 +3,7 @@ import axios from 'axios';
 import { URLSearchParams } from 'url';
 import { showInformationMessage, refreshHistoryTree, showLoginMessage } from './utils';
 import { MINT_USER_CODE } from './constants/api';
+import { SUPPORTED_FILE_EXTENSIONS } from './constants/content';
 import { LocalStorageService } from './constants/types';
 
 export const initializeAuth = (storageManager: LocalStorageService) => {
@@ -32,3 +33,18 @@ export const initializeAuth = (storageManager: LocalStorageService) => {
     }
   });
 };
+
+// Setup listener for file event changes
+
+const uploadWorkspace = () => {
+  vscode.commands.executeCommand('mintlify.upload');
+};
+
+// Todo: setup only relevant files
+const watcher = vscode.workspace.createFileSystemWatcher(`**/*.{${SUPPORTED_FILE_EXTENSIONS.join(',')}}`, true);
+watcher.onDidChange(() => {
+  // uploadWorkspace()
+});
+watcher.onDidDelete(() => {
+  // uploadWorkspace()
+});

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { LOGIN_URI, REQUEST_ACCESS_URI } from './constants/api';
 import { ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
-	LOGOUT_BUTTON, SIGN_IN_BUTTON } from './constants/content';
+	LOGOUT_BUTTON, SIGN_IN_BUTTON, SUPPORTED_FILE_EXTENSIONS } from './constants/content';
 
 export type File = {
 	path: string;
@@ -65,22 +65,7 @@ const isTraversablePath = (folderName: string): boolean => {
 const isValidFiletype = (fileName: string): boolean => {
 	const fileExtensionRegex = /(?:\.([^.]+))?$/;
 	const fileExtension = fileExtensionRegex.exec(fileName)![1];
-
-	// Todo: Search non-code files
-	const validExtensions: Record<string, boolean> = {
-		'ts': true,
-		'tsx': true,
-		'js': true,
-		'jsx': true,
-		'html': true,
-		'css': true,
-		'py': true,
-		'vue': true,
-		'md': true,
-		'env': true,
-	};
-
-	return fileExtension != null && validExtensions[fileExtension];
+	return fileExtension != null && SUPPORTED_FILE_EXTENSIONS.includes(fileExtension);
 };
 
 export const getFiles = async (option: string = ENTIRE_WORKSPACE_OPTION): Promise<File[]> => {
