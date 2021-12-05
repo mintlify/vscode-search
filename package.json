@@ -17,6 +17,7 @@
 	"activationEvents": [
 		"onStartupFinished",
 		"onCommand:mintlify.searchbar",
+		"onCommand:mintlify.searchFiles",
 		"onCommand:mintlify.search",
 		"onCommand:mintlify.logout",
 		"onCommand:mintlify.settings"
@@ -31,6 +32,10 @@
 			{
 				"command": "mintlify.search",
 				"title": "Mint Search"
+			},
+			{
+				"command": "mintlify.searchFiles",
+				"title": "Mint Search Files"
 			},
 			{
 				"command": "mintlify.logout",

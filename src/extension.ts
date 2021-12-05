@@ -10,6 +10,7 @@ import { ENTIRE_WORKSPACE_OPTION,
 	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK, } from './constants/content';
 import { LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK,
+	MINT_SEARCH_FILES,
 	MINT_SEARCH_ANSWER_BOX_FEEDBACK, MINT_UPLOAD } from './constants/api';
 import HistoryProviderProvider from './history/HistoryTree';
 import { LocalStorageService, SearchResult } from './constants/types';
@@ -93,6 +94,7 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.commands.executeCommand('mintlify.search', { search, option, onGetResults: () => {
 				searchPick.hide();
 			}});
+			// vscode.commands.executeCommand('mintlify.searchFiles', { search });
 			// vscode.commands.executeCommand('mintlify.upload');
 		});
 	});
@@ -318,16 +320,32 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	const upload = vscode.commands.registerCommand('mintlify.upload', async () => {
-		const root = getRootPath();
-		const files = await getFiles(ENTIRE_WORKSPACE_OPTION);
+	const searchFiles = vscode.commands.registerCommand('mintlify.searchFiles', async ({ search }) => {
 		const authToken = storageManager.getValue('authToken');
-
-		await axios.post(MINT_UPLOAD, {
+		const root = getRootPath();
+		await axios.post(MINT_SEARCH_FILES, {
+			search,
 			root,
-			files,
 			authToken
 		});
+	});
+
+	let isUploading = false;
+	const upload = vscode.commands.registerCommand('mintlify.upload', async () => {
+		if (!isUploading) {
+			isUploading = true;
+			const root = getRootPath();
+			const files = await getFiles(ENTIRE_WORKSPACE_OPTION);
+			const authToken = storageManager.getValue('authToken');
+
+			await axios.post(MINT_UPLOAD, {
+				root,
+				files,
+				authToken
+			});
+
+			isUploading = false;
+		}
 	});
 
 	const refreshHistory = vscode.commands.registerCommand('mintlify.refreshHistory', async () => {
@@ -348,7 +366,7 @@ export function activate(context: vscode.ExtensionContext) {
 		showSettings(authToken != null);
 	});
 
-	context.subscriptions.push(searchbar, searchCommand, upload, refreshHistory, logout, settings);
+	context.subscriptions.push(searchbar, searchCommand, searchFiles, upload, refreshHistory, logout, settings);
 }
 
 // this method is called when your extension is deactivated
