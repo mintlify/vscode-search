@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { LOGIN_URI, REQUEST_ACCESS_URI } from './api';
+import { LOGIN_URI, REQUEST_ACCESS_URI } from './constants/api';
 import { ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
-	LOGOUT_BUTTON, SIGN_IN_BUTTON } from './content';
+	LOGOUT_BUTTON, SIGN_IN_BUTTON } from './constants/content';
 
 export type File = {
 	path: string;
@@ -185,4 +185,8 @@ export const showStatusBarItem = () => {
 export const configUserSettings = () => {
 	const config = vscode.workspace.getConfiguration('http');
 	config.update('systemCertificates', false, true);
+};
+
+export const refreshHistoryTree = () => {
+	vscode.commands.executeCommand('mintlify.refreshHistory');
 };

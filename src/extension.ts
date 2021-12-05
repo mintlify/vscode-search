@@ -1,50 +1,33 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
-import { URLSearchParams } from 'url';
-import { getFiles, showErrorMessage, showInformationMessage,
+import { getFiles, showErrorMessage,
 	showLoginMessage, showStatusBarItem,
 	showSettings,
 	getRootPath,
-	getOptionShort, configUserSettings } from './utils';
+	getOptionShort, configUserSettings, refreshHistoryTree } from './utils';
 import { ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
-	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK, } from './content';
+	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK, } from './constants/content';
 import { LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
-	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK, MINT_USER_CODE,
-	MINT_SEARCH_ANSWER_BOX_FEEDBACK, MINT_UPLOAD } from './api';
+	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK,
+	MINT_SEARCH_ANSWER_BOX_FEEDBACK, MINT_UPLOAD } from './constants/api';
 import HistoryProviderProvider from './history/HistoryTree';
-
-type SearchResult = {
-	path: string;
-	filename: string;
-	content: string;
-	lineStart: number;
-	lineEnd: number;
-};
-
-class LocalStorageService {
-  constructor(private storage: vscode.Memento) {}
-	
-  public getValue(key: string) {
-    return this.storage.get(key, null);
-  }
-
-  public setValue(key: string, value: string | null) {
-    this.storage.update(key, value);
-  }
-}
+import { LocalStorageService, SearchResult } from './constants/types';
+import { initializeAuth } from './url';
 
 export function activate(context: vscode.ExtensionContext) {
-	// Set default settings
-	configUserSettings();
-	showStatusBarItem();
-
 	// Set storage manager for auth tokens
 	const storageManager = new LocalStorageService(context.globalState);
 	const authToken: string | null = storageManager.getValue('authToken');
 	if (!authToken) {
 		showLoginMessage();
 	}
+
+	// Set default settings
+	configUserSettings();
+	showStatusBarItem();
+	refreshHistoryTree();
+	initializeAuth(storageManager);
 
 	const searchbar = vscode.commands.registerCommand('mintlify.searchbar', async () => {
 		const searchPick = vscode.window.createQuickPick();
@@ -54,7 +37,6 @@ export function activate(context: vscode.ExtensionContext) {
 		
 		// Retrieve tokens for auth
 		const authToken = storageManager.getValue('authToken');
-
 		// Retrieve for identification
 		const root = getRootPath();
 
@@ -357,10 +339,6 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	const refreshHistoryTree = () => {
-		vscode.commands.executeCommand('mintlify.refreshHistory');
-	};
-
 	const logout = vscode.commands.registerCommand('mintlify.logout', async () => {
 		vscode.env.openExternal(vscode.Uri.parse(LOGOUT_URI));
 	});
@@ -369,35 +347,6 @@ export function activate(context: vscode.ExtensionContext) {
 		const authToken = storageManager.getValue('authToken');
 		showSettings(authToken != null);
 	});
-
-	vscode.window.registerUriHandler({
-    async handleUri(uri: vscode.Uri) {
-      if (uri.path === '/auth') {
-        const query = new URLSearchParams(uri.query);
-
-				const code = query.get('code');
-				try {
-					const authResponse = await axios.post(MINT_USER_CODE, {code});
-					const { authToken } = authResponse.data;
-					storageManager.setValue('authToken', authToken);
-					refreshHistoryTree();
-
-					showInformationMessage('Logged in to Mintlify');
-				} catch (err) {
-					console.log(err);
-					vscode.window.showErrorMessage('Error authenticating user');
-				}
-      } else if (uri.path === '/logout') {
-				storageManager.setValue('authToken', null);
-				refreshHistoryTree();
-
-				showLoginMessage();
-			}
-    }
-  });
-
-	// Generate historyTree
-	refreshHistoryTree();
 
 	context.subscriptions.push(searchbar, searchCommand, upload, refreshHistory, logout, settings);
 }
