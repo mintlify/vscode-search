@@ -8,10 +8,10 @@ import { getFiles, showErrorMessage, showInformationMessage,
 	getOptionShort, configUserSettings } from './utils';
 import { ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
-	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './content';
+	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK, } from './content';
 import { LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK, MINT_USER_CODE,
-	MINT_SEARCH_ANSWER_BOX_FEEDBACK } from './api';
+	MINT_SEARCH_ANSWER_BOX_FEEDBACK, MINT_UPLOAD } from './api';
 import HistoryProviderProvider from './history/HistoryTree';
 
 type SearchResult = {
@@ -111,6 +111,7 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.commands.executeCommand('mintlify.search', { search, option, onGetResults: () => {
 				searchPick.hide();
 			}});
+			// vscode.commands.executeCommand('mintlify.upload');
 		});
 	});
 
@@ -335,6 +336,18 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
+	const upload = vscode.commands.registerCommand('mintlify.upload', async () => {
+		const root = getRootPath();
+		const files = await getFiles(ENTIRE_WORKSPACE_OPTION);
+		const authToken = storageManager.getValue('authToken');
+
+		await axios.post(MINT_UPLOAD, {
+			root,
+			files,
+			authToken
+		});
+	});
+
 	const refreshHistory = vscode.commands.registerCommand('mintlify.refreshHistory', async () => {
 		const authToken = storageManager.getValue('authToken');
 		// Get history
@@ -386,7 +399,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// Generate historyTree
 	refreshHistoryTree();
 
-	context.subscriptions.push(searchbar, searchCommand, refreshHistory, logout, settings);
+	context.subscriptions.push(searchbar, searchCommand, upload, refreshHistory, logout, settings);
 }
 
 // this method is called when your extension is deactivated
