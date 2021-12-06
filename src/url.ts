@@ -33,17 +33,3 @@ export const initializeAuth = (storageManager: LocalStorageService) => {
     }
   });
 };
-
-// Setup listener for file event changes
-// const uploadWorkspace = () => {
-//   vscode.commands.executeCommand('mintlify.upload');
-// };
-
-// Todo: setup only relevant files
-// const watcher = vscode.workspace.createFileSystemWatcher(`**/*.{${SUPPORTED_FILE_EXTENSIONS.join(',')}}`, true);
-// watcher.onDidChange(() => {
-//   uploadWorkspace();
-// });
-// watcher.onDidDelete(() => {
-//   // uploadWorkspace()
-// });

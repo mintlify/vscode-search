@@ -5,11 +5,9 @@ const MINTBASE = isDevMode ? 'http://localhost:5000' : 'https://api.mintlify.com
 
 export const MINT_SEARCH_AUTOCOMPLETE = `${MINTBASE}/search/autocomplete`;
 export const MINT_SEARCH_RESULTS = `${MINTBASE}/search/results`;
-export const MINT_SEARCH_FILES = `${MINTBASE}/search/results/files`;
 export const MINT_SEARCH_FEEDBACK = `${MINTBASE}/search/feedback`;
 export const MINT_SEARCH_ANSWER_BOX_FEEDBACK = `${MINTBASE}/search/feedback/answerbox`;
 export const MINT_SEARCH_HISTORY = `${MINTBASE}/search/history`;
-export const MINT_UPLOAD = `${MINTBASE}/search/upload`;
 
 export const MINT_USER_CODE = `${MINTBASE}/user/code`;
 
