@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import TimeAgo from 'javascript-time-ago';
 import axios from 'axios';
-import { MINT_SEARCH_HISTORY } from '../api';
+import { MINT_SEARCH_HISTORY } from '../constants/api';
 import { getRootPath } from '../utils';
-import { ENTIRE_WORKSPACE_OPTION } from '../content';
+import { ENTIRE_WORKSPACE_OPTION } from '../constants/content';
 // @ts-ignore
 import en from 'javascript-time-ago/locale/en';
 
