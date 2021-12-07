@@ -98,9 +98,9 @@ export const getFiles = async (option: string = ENTIRE_WORKSPACE_OPTION): Promis
 export const getOptionShort = (option: string = ENTIRE_WORKSPACE_OPTION): string => {
 	switch (option) {
 		case ENTIRE_WORKSPACE_OPTION:
-			return 'the workspace';
+			return 'workspace';
 		case THIS_FILE_OPTION:
-			return 'this file';
+			return 'file';
 		default:
 			return '';
 	}

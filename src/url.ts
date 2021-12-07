@@ -3,7 +3,6 @@ import axios from 'axios';
 import { URLSearchParams } from 'url';
 import { showInformationMessage, refreshHistoryTree, showLoginMessage } from './utils';
 import { MINT_USER_CODE } from './constants/api';
-import { SUPPORTED_FILE_EXTENSIONS } from './constants/content';
 import { LocalStorageService } from './constants/types';
 
 export const initializeAuth = (storageManager: LocalStorageService) => {
@@ -15,11 +14,11 @@ export const initializeAuth = (storageManager: LocalStorageService) => {
         const code = query.get('code');
         try {
           const authResponse = await axios.post(MINT_USER_CODE, {code});
-          const { authToken } = authResponse.data;
+          const { authToken, email } = authResponse.data;
           storageManager.setValue('authToken', authToken);
           refreshHistoryTree();
   
-          showInformationMessage('Logged in to Mintlify');
+          showInformationMessage(`Logged in to Mintlify as ${email}`);
         } catch (err) {
           console.log(err);
           vscode.window.showErrorMessage('Error authenticating user');

@@ -106,7 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		vscode.window.withProgress({
 			location: vscode.ProgressLocation.Notification,
-			title: `🔎 Mint searching across ${optionShort}`,
+			title: `🔎 Mint searching across the ${optionShort}`,
 		},
 		() => {
 			return new Promise(async (resolve, reject) => {
@@ -123,6 +123,7 @@ export function activate(context: vscode.ExtensionContext) {
 						files,
 						search,
 						root,
+						range: optionShort,
 						authToken
 					}, {
 						maxContentLength: Infinity,
