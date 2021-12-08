@@ -4,7 +4,7 @@
 	"icon": "img/icon.png",
 	"publisher": "mintlify",
 	"displayName": "Mintlify",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"repository": {
 		"url": "https://github.com/mintlify/vscode"
 	},
@@ -113,7 +113,7 @@
 		"webpack": "webpack --mode development",
 		"package": "webpack --mode production --devtool hidden-source-map",
 		"test-compile": "tsc -p ./",
-		"dev": "npm run webpack && vsce package && code --install-extension search-1.0.5.vsix && rm search-1.0.5.vsix",
+		"dev": "npm run webpack && vsce package && code --install-extension search-1.0.6.vsix && rm search-1.0.6.vsix",
 		"publish": "npm run package && vsce publish"
 	},
 	"devDependencies": {
