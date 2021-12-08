@@ -111,13 +111,13 @@ export function activate(context: vscode.ExtensionContext) {
 		() => {
 			return new Promise(async (resolve, reject) => {
 				try {
-					const files = await getFiles(option);
+					const files = await getFiles(option, vscode.window.activeTextEditor?.document.uri.path);
 					const searchRes: {
 							data: {
 								results: SearchResult[],
 								answer: string | null,
 								objectID: string,
-								errors: string[]
+								errors?: string[]
 							}
 					} = await axios.post(MINT_SEARCH_RESULTS, {
 						files,
@@ -133,17 +133,9 @@ export function activate(context: vscode.ExtensionContext) {
 					onGetResults();
 
 					const { results: searchResults, answer, objectID, errors: searchErrors } = searchRes.data;
-					searchErrors.map((error: string) => {
+					searchErrors?.map((error: string) => {
 						vscode.window.showWarningMessage(error);
 					});
-
-					let resultItems: vscode.QuickPickItem[] = [
-						{
-							label: '📭',
-							description: 'No results found. Try broadening your search',
-							alwaysShow: true,
-						}
-					];
 
 					let lastContent = '';
 					let spacesId = '';
@@ -163,28 +155,33 @@ export function activate(context: vscode.ExtensionContext) {
 					});
 
 					let answerBoxLineCount = 0;
+					let resultItems: vscode.QuickPickItem[] = searchResultsWithSpacesId.map((result) => {
+						return {
+							label: '↦',
+							description: result.content,
+							detail: result.filename,
+						};
+					});
 
-					if (searchResultsWithSpacesId.length > 0) {
-						resultItems = searchResultsWithSpacesId.map((result) => {
+					// Inject answer to the front
+					if (answer) {
+						const answerByLine = answer.replace(/(?![^\n]{1,64}$)([^\n]{1,64})\s/g, '$1\n').split('\n');
+						answerBoxLineCount = answerByLine.length;
+						const itemsByLine =  answerByLine.map((line: string, i: number) => {
 							return {
-								label: '↦',
-								description: result.content,
-								detail: result.filename,
+								label: i === 0 ? `$(lightbulb) ${line}` : line,
+								alwaysShow: true
 							};
 						});
-
-						// Inject answer to the front
-						if (answer) {
-							const answerByLine = answer.replace(/(?![^\n]{1,64}$)([^\n]{1,64})\s/g, '$1\n').split('\n');
-							answerBoxLineCount = answerByLine.length;
-							const itemsByLine =  answerByLine.map((line: string, i: number) => {
-								return {
-									label: i === 0 ? `$(lightbulb) ${line}` : line,
-									alwaysShow: true
-								};
-							});
-							resultItems = [...itemsByLine, ...resultItems];
-						}
+						resultItems = [...itemsByLine, ...resultItems];
+					} else if (resultItems.length === 0) {
+						resultItems = [
+							{
+								label: '📭',
+								description: 'No results found. Try broadening your search',
+								alwaysShow: true,
+							}
+						];
 					}
 
 					const resultsPick = vscode.window.createQuickPick();

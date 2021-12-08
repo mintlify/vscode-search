@@ -8,6 +8,7 @@ export type File = {
 	path: string;
 	filename: string;
 	content: string;
+	isCurrentActiveFile?: boolean;
 };
 
 export const getRootPath = (): string => {
@@ -20,7 +21,7 @@ export const getRootPath = (): string => {
 const U18ARRAY_TO_MB = 1_048_576;
 const MAX_FILE_SIZE_IN_MB = 2;
 
-const traverseFiles = async (root: vscode.Uri, filesContent: File[]): Promise<File[]> => {
+const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActivePath?: string): Promise<File[]> => {
 	const files = await vscode.workspace.fs.readDirectory(root);
 	const filePromises = files.map(async (file) => {
 		const directoryName = file[0];
@@ -29,7 +30,12 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[]): Promise<Fi
 		// If filetype is a file
 		if (file[1] === 1 && isValidFiletype(directoryName)) {
 			const readFileRaw = await vscode.workspace.fs.readFile(directoryPathUri);
-			const readFileContent = { path: directoryPath, filename: directoryName, content: readFileRaw.toString()};
+			const readFileContent = {
+				path: directoryPath,
+				filename: directoryName,
+				content: readFileRaw.toString(),
+				isCurrentActiveFile: currentActivePath != null && directoryPath.includes(currentActivePath)
+			};
 
 			// Check file size to ensure that it's not too large
 			const fileSizeInMB = readFileRaw.length / U18ARRAY_TO_MB;
@@ -42,7 +48,7 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[]): Promise<Fi
 		}
 		// If is folder
 		else if (file[1] === 2 && isTraversablePath(directoryName)) {
-			await traverseFiles(directoryPathUri, filesContent);
+			await traverseFiles(directoryPathUri, filesContent, currentActivePath);
 		}
 
 	});
@@ -68,10 +74,10 @@ const isValidFiletype = (fileName: string): boolean => {
 	return fileExtension != null && SUPPORTED_FILE_EXTENSIONS.includes(fileExtension);
 };
 
-export const getFiles = async (option: string = ENTIRE_WORKSPACE_OPTION): Promise<File[]> => {
+export const getFiles = async (option: string = ENTIRE_WORKSPACE_OPTION, currentActivePath?: string): Promise<File[]> => {
 	if (option === ENTIRE_WORKSPACE_OPTION) {
 		const root = vscode.workspace.workspaceFolders![0].uri;
-		const files = await traverseFiles(root, []);
+		const files = await traverseFiles(root, [], currentActivePath);
 		return files;
 	}
 
