@@ -62,6 +62,8 @@ const isTraversablePath = (folderName: string): boolean => {
 		".git": true,
 		"build": true,
 		"out": true,
+		".next": true,
+		"dist": true,
 	};
 
 	return !nonTraversable[folderName];
