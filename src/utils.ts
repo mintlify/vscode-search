@@ -179,23 +179,36 @@ export const configUserSettings = () => {
 	const httpConfig = vscode.workspace.getConfiguration('http');
 	httpConfig.update('systemCertificates', false, true);
 
+	// Remove color scheme in case left over
+	removePickerColorScheme();
+};
+
+export const changePickerColorScheme = () => {
 	const workbenchConfig = vscode.workspace.getConfiguration('workbench');
 	const currentColorScheme = workbenchConfig.get('colorCustomizations') as any;
 	const mintlifyColorScheme = {
-		'[Default Light+][Default Dark+]': {
-			'button.background': '#0C8C5E',
-			'extensionButton.prominentBackground': '#0E639C',
-			'extensionButton.prominentHoverBackground': '#1177BB'
-		}
+		"[Default Dark+]": {
+      "quickInput.background": "#2E3D38",
+      "quickInput.foreground": "#FFF",
+      "quickInputList.focusBackground": "#0C8C5E80",
+      "list.highlightForeground": "#18E299A1",
+      "focusBorder": "#18E29945"
+    },
+    "[Default Light+]": {
+      "quickInputList.focusBackground": "#0C8C5E",
+      "list.highlightForeground": "#1B4637",
+      "list.focusHighlightForeground": "#E8FEF6",
+      "focusBorder": "#0C8C5E"
+    }
 	};
 	workbenchConfig.update('colorCustomizations', {...currentColorScheme, ...mintlifyColorScheme}, true);
 };
 
-export const removeCustomColorConfig = () => {
+export const removePickerColorScheme = () => {
 	const workbenchConfig = vscode.workspace.getConfiguration('workbench');
-	let currentColorScheme = workbenchConfig.get('colorCustomizations') as any;
-	delete currentColorScheme['[Default Light+][Default Dark+]'];
-	workbenchConfig.update('colorCustomizations', currentColorScheme, true);
+	const currentColorScheme = workbenchConfig.get('colorCustomizations') as any;
+	const { ['[Default Dark+]']: defaultDark, ['[Default Light+]']: defaultLight, ...removedScheme } = currentColorScheme;
+	workbenchConfig.update('colorCustomizations', removedScheme, true);
 };
 
 export const refreshHistoryTree = () => {

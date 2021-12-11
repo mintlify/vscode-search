@@ -7,10 +7,11 @@ import { getFiles, showErrorMessage,
 	getOptionShort,
 	configUserSettings,
 	refreshHistoryTree,
-	removeCustomColorConfig } from './utils';
+	changePickerColorScheme,
+	removePickerColorScheme } from './utils';
 import { ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
-	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK, } from './constants/content';
+	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './constants/content';
 import { LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK,
 	MINT_SEARCH_ANSWER_BOX_FEEDBACK } from './constants/api';
@@ -33,6 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
 	initializeAuth(storageManager);
 
 	const searchbar = vscode.commands.registerCommand('mintlify.searchbar', async () => {
+		changePickerColorScheme();
 		const searchPick = vscode.window.createQuickPick();
 		searchPick.title = "Mint Search";
 		searchPick.placeholder = "What would you like to find?";
@@ -80,6 +82,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 			return searchPick.items = itemResults;
 		});
+
+		let isGettingResults = false;
 		searchPick.onDidChangeSelection(async (selectedItems) => {
 			const selected = selectedItems[0];
 
@@ -94,14 +98,22 @@ export function activate(context: vscode.ExtensionContext) {
 
 			searchPick.value = search;
 			vscode.commands.executeCommand('mintlify.search', { search, option, onGetResults: () => {
+				isGettingResults = true;
 				searchPick.hide();
 			}});
+		});
+
+		searchPick.onDidHide(() => {
+			if (!isGettingResults) {
+				removePickerColorScheme();
+			}
 		});
 	});
 
 	const searchCommand = vscode.commands.registerCommand('mintlify.search', async (
 		{ search, option, onGetResults = () => {} }
 	) => {
+		changePickerColorScheme();
 		const root = getRootPath();
 		// Retrieve tokens again to use latest
 		const authToken = storageManager.getValue('authToken');
@@ -134,7 +146,6 @@ export function activate(context: vscode.ExtensionContext) {
 					});
 
 					onGetResults();
-
 					const { results: searchResults, answer, objectID, errors: searchErrors } = searchRes.data;
 					searchErrors?.map((error: string) => {
 						vscode.window.showWarningMessage(error);
@@ -300,6 +311,7 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 					});
 
+					resultsPick.onDidHide(() => removePickerColorScheme());
 					vscode.commands.executeCommand('mintlify.refreshHistory');
 
 					resolve('Completed search');
@@ -341,5 +353,5 @@ export function activate(context: vscode.ExtensionContext) {
 
 // this method is called when your extension is deactivated
 export function deactivate() {
-	removeCustomColorConfig();
+	removePickerColorScheme();
 }
