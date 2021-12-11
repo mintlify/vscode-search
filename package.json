@@ -101,13 +101,16 @@
 				}
 			]
 		},
-		"productIconThemes": [
-			{
-				"id": "mintlify-icons",
-				"label": "Mintlify",
-				"path": "./icons/mintlify-product-icon-theme.json"
-			}
-		]
+		"configuration": {
+			"title": "Mintlify",
+			"properties": {
+        "mintlify.useMintTheme": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use the Mintlify custom theme color in the status bar"
+        }
+      }
+		}
 	},
 	"scripts": {
 		"webpack": "webpack --mode development",
