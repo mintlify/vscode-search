@@ -187,14 +187,14 @@ export const changePickerColorScheme = () => {
 	const workbenchConfig = vscode.workspace.getConfiguration('workbench');
 	const currentColorScheme = workbenchConfig.get('colorCustomizations') as any;
 	const mintlifyColorScheme = {
-		"[Default Dark+]": {
+		"[*Dark*]": {
       "quickInput.background": "#2E3D38",
       "quickInput.foreground": "#FFF",
       "quickInputList.focusBackground": "#0C8C5E80",
       "list.highlightForeground": "#18E299A1",
       "focusBorder": "#18E29945"
     },
-    "[Default Light+]": {
+    "[*Light*]": {
       "quickInputList.focusBackground": "#0C8C5E",
       "list.highlightForeground": "#1B4637",
       "list.focusHighlightForeground": "#E8FEF6",
@@ -207,7 +207,7 @@ export const changePickerColorScheme = () => {
 export const removePickerColorScheme = () => {
 	const workbenchConfig = vscode.workspace.getConfiguration('workbench');
 	const currentColorScheme = workbenchConfig.get('colorCustomizations') as any;
-	const { ['[Default Dark+]']: defaultDark, ['[Default Light+]']: defaultLight, ...removedScheme } = currentColorScheme;
+	const { ['[*Dark*]']: defaultDark, ['[*Light*]']: defaultLight, ...removedScheme } = currentColorScheme;
 	workbenchConfig.update('colorCustomizations', removedScheme, true);
 };
 
