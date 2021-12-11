@@ -100,16 +100,6 @@
 					"when": "view == search"
 				}
 			]
-		},
-		"configuration": {
-			"title": "Mintlify",
-			"properties": {
-        "mintlify.useMintTheme": {
-          "type": "boolean",
-          "default": true,
-          "description": "Use the Mintlify custom theme color in the status bar"
-        }
-      }
 		}
 	},
 	"scripts": {
