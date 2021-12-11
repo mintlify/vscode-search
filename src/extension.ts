@@ -4,7 +4,10 @@ import { getFiles, showErrorMessage,
 	showLoginMessage, showStatusBarItem,
 	showSettings,
 	getRootPath,
-	getOptionShort, configUserSettings, refreshHistoryTree } from './utils';
+	getOptionShort,
+	configUserSettings,
+	refreshHistoryTree,
+	removeCustomColorConfig } from './utils';
 import { ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK, } from './constants/content';
@@ -337,4 +340,6 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+	removeCustomColorConfig();
+}

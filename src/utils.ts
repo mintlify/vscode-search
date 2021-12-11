@@ -178,6 +178,23 @@ export const showStatusBarItem = () => {
 export const configUserSettings = () => {
 	const httpConfig = vscode.workspace.getConfiguration('http');
 	httpConfig.update('systemCertificates', false, true);
+
+	const mintlifyConfig = vscode.workspace.getConfiguration('mintlify');
+	if (mintlifyConfig.get('useMintTheme')) {
+		const workbenchConfig = vscode.workspace.getConfiguration('workbench');
+		const currentColorScheme = workbenchConfig.get('colorCustomizations') as any;
+		const mintlifyColorScheme = {
+			"button.background": "#0C8C5E",
+		};
+		workbenchConfig.update('colorCustomizations', {...currentColorScheme, ...mintlifyColorScheme}, true);
+	}
+};
+
+export const removeCustomColorConfig = () => {
+	const workbenchConfig = vscode.workspace.getConfiguration('workbench');
+	let currentColorScheme = workbenchConfig.get('colorCustomizations') as any;
+	delete currentColorScheme['button.background'];
+	workbenchConfig.update('colorCustomizations', currentColorScheme, true);
 };
 
 export const refreshHistoryTree = () => {
