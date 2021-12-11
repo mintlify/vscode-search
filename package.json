@@ -47,7 +47,7 @@
 			},
 			{
 				"command": "mintlify.refreshHistory",
-        "title": "Refresh Search History",
+				"title": "Refresh Search History",
 				"icon": {
 					"light": "./icons/refresh-light.svg",
 					"dark": "./icons/refresh-dark.svg"
@@ -126,7 +126,7 @@
 		"@typescript-eslint/parser": "^4.31.1",
 		"@vscode/test-electron": "^1.6.2",
 		"eslint": "^7.32.0",
-		"glob": "^7.1.7",
+		"glob": "^7.2.0",
 		"mocha": "^9.1.1",
 		"ts-loader": "^9.2.6",
 		"typescript": "^4.4.3",
@@ -136,6 +136,7 @@
 	"dependencies": {
 		"axios": "^0.24.0",
 		"javascript-time-ago": "^2.3.10",
+		"minimatch": "^3.0.4",
 		"url": "^0.11.0",
 		"vsce": "^2.3.0"
 	}
