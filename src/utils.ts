@@ -178,13 +178,6 @@ export const showStatusBarItem = () => {
 export const configUserSettings = () => {
 	const httpConfig = vscode.workspace.getConfiguration('http');
 	httpConfig.update('systemCertificates', false, true);
-	const workbenchConfig = vscode.workspace.getConfiguration('workbench');
-	const currentColorScheme = workbenchConfig.get('colorCustomizations') as any;
-	const mintlifyColorScheme = {
-		"statusBar.background": "#0C8C5E",
-		"statusBar.foreground": "#FFFFFF",
-	};
-	workbenchConfig.update('colorCustomizations', {...currentColorScheme, ...mintlifyColorScheme}, true);
 };
 
 export const refreshHistoryTree = () => {
