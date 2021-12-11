@@ -12,8 +12,9 @@ export const initializeAuth = (storageManager: LocalStorageService) => {
         const query = new URLSearchParams(uri.query);
   
         const code = query.get('code');
+        const uriScheme = vscode.env.uriScheme;
         try {
-          const authResponse = await axios.post(MINT_USER_CODE, {code});
+          const authResponse = await axios.post(MINT_USER_CODE, { code, uriScheme });
           const { authToken, email } = authResponse.data;
           storageManager.setValue('authToken', authToken);
           refreshHistoryTree();

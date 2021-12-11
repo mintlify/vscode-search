@@ -12,7 +12,7 @@ import { getFiles, showErrorMessage,
 import { ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './constants/content';
-import { LOGOUT_URI, MINT_SEARCH_AUTOCOMPLETE,
+import { getLogoutURI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK,
 	MINT_SEARCH_ANSWER_BOX_FEEDBACK } from './constants/api';
 import HistoryProviderProvider from './history/HistoryTree';
@@ -340,7 +340,8 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	const logout = vscode.commands.registerCommand('mintlify.logout', async () => {
-		vscode.env.openExternal(vscode.Uri.parse(LOGOUT_URI));
+		const logoutURI = getLogoutURI(vscode.env.uriScheme);
+		vscode.env.openExternal(vscode.Uri.parse(logoutURI));
 	});
 
 	const settings = vscode.commands.registerCommand('mintlify.settings', async () => {

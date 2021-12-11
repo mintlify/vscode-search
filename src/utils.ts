@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { LOGIN_URI, REQUEST_ACCESS_URI } from './constants/api';
+import { getLoginURI, REQUEST_ACCESS_URI } from './constants/api';
 import { ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, SIGN_IN_BUTTON, SUPPORTED_FILE_EXTENSIONS } from './constants/content';
@@ -118,7 +118,8 @@ export const showLoginMessage = () => {
 	vscode.window.showInformationMessage('🌿 Sign in to use Mintlify search', SIGN_IN_BUTTON)
 		.then((selectedValue) => {
 			if (selectedValue === SIGN_IN_BUTTON) {
-				vscode.env.openExternal(vscode.Uri.parse(LOGIN_URI));
+				const loginURI = getLoginURI(vscode.env.uriScheme);
+				vscode.env.openExternal(vscode.Uri.parse(loginURI));
 			}
 		});
 };
