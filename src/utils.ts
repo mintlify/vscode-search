@@ -184,6 +184,8 @@ export const configUserSettings = () => {
 	const mintlifyColorScheme = {
 		'[Default Light+][Default Dark+]': {
 			'button.background': '#0C8C5E',
+			'extensionButton.prominentBackground': '#0E639C',
+			'extensionButton.prominentHoverBackground': '#1177BB'
 		}
 	};
 	workbenchConfig.update('colorCustomizations', {...currentColorScheme, ...mintlifyColorScheme}, true);
