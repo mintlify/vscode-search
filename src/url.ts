@@ -27,7 +27,6 @@ export const initializeAuth = (storageManager: LocalStorageService) => {
       } else if (uri.path === '/logout') {
         storageManager.setValue('authToken', null);
         refreshHistoryTree();
-  
         showLoginMessage();
       }
     }
