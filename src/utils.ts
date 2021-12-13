@@ -102,20 +102,21 @@ const getGitIgnore = async (root: vscode.Uri): Promise<GitIgnore | undefined> =>
 			const globs : Set<string> = new Set();
 			gitIgnoreElems.forEach((elem) => {
 				const trimmed = elem.trim();
+				const lastChar = trimmed[trimmed.length-1];
+				const removeLastSlash = trimmed.slice(0,-1);
 				if (hasMagic(trimmed)) {
 					globs.add(trimmed);
 				} else if (trimmed.charAt(0) === '/') { // if element starts with '/' it only matches with files/directories in the top level
 					// if element ends with '/' it only matches with directories
-					if (trimmed.charAt(-1) === '/') {
-						const removeLastSlash = trimmed.substring(0,-1);
+					if (lastChar === '/') {
 						topLevelDirectories.add(`${root}${removeLastSlash}`);
 					} else {
 						topLevel.add(`${root}${trimmed}`);
 					}
 				} else if (trimmed.includes('/')) {
 					// if element ends with '/' it only matches with directories
-					if (trimmed.charAt(-1) === '/') {
-						folders.add(trimmed);
+					if (lastChar === '/') {
+						folders.add(removeLastSlash);
 					} else {
 						both.add(trimmed);
 					}
@@ -142,36 +143,38 @@ const inGitIgnore = (root: vscode.Uri, file: any, gitIgnore?: GitIgnore) : boole
 	}
 	const directoryName = file[0];
 	const directoryPath = `${root}/${directoryName}`;
-	if (gitIgnore.topLevel.has(directoryPath)) {
+
+	if (gitIgnore.topLevel.has(directoryPath) || gitIgnore.both.has(directoryName)) {
 		return true;
 	}
-	
-	if (file[1] == 1) { // is a file
-		if (gitIgnore.both.has(directoryName)) {
-			return true;
+	let ignore = false;
+	gitIgnore.both.forEach((elem) => {
+		if (directoryPath.slice(-elem.length) === elem) {
+			ignore = true;
 		}
-	} else if (file[1] == 2) { // is a folder
+	});
+	if (ignore) { return true; }
+
+	if (file[1] == 2) { // is a folder
 		if (gitIgnore.topLevelDirectories.has(directoryPath)) {
 			return true;
 		}
+		let ignoreFolder = false;
 		gitIgnore.folders.forEach((gitIgnoreElem) => {
-			if ( directoryPath.includes(gitIgnoreElem)) {
-				return true;
+			if (directoryPath.slice(-gitIgnoreElem.length) === gitIgnoreElem) {
+				ignoreFolder = true;
 			}
 		});
-		gitIgnore.both.forEach((gitIgnoreElem) => {
-			if ( directoryPath.includes(gitIgnoreElem)) {
-				return true;
-			}
-		});
+		if (ignoreFolder) { return true; }
 	}
 	const path = `${root.toString}/${directoryName}`;
+	let matchesGlob = false;
 	gitIgnore.globs.forEach((glob) => {
 		if (minimatch(path, glob)) {
-			return true;
+			matchesGlob = true;
 		}
 	});
-	return false;
+	return matchesGlob;
 };
 
 // Remove duplicate on backend
