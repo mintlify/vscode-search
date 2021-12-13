@@ -170,7 +170,6 @@ const inGitIgnore = (root: vscode.Uri, file: any, gitIgnore?: GitIgnore) : boole
 	gitIgnore.globs.forEach((glob) => {
 		const globmatch = minimatch(path, glob, {dot: true, debug: true});
 		if (globmatch) {
-			console.log('GLOB!', path, ' + ', glob);
 			matchesGlob = true;
 		}
 	});
@@ -188,7 +187,6 @@ export const getFiles = async (option: string = ENTIRE_WORKSPACE_OPTION, current
 	if (option === ENTIRE_WORKSPACE_OPTION) {
 		const root = vscode.workspace.workspaceFolders![0].uri;
 		const gitIgnore = await getGitIgnore(root);
-		console.log('gitIgnore: ', gitIgnore);
 		const files = await traverseFiles(root, [], currentActivePath, gitIgnore);
 		return files;
 	}

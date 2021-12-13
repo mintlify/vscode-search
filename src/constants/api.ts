@@ -1,8 +1,7 @@
 const isDevMode = process.env.NODE_ENV === 'development';
 
 // Backend API
-// const MINTBASE = isDevMode ? 'http://localhost:5000' : 'https://api.mintlify.com';
-const MINTBASE = 'http://localhost:5000';
+const MINTBASE = isDevMode ? 'http://localhost:5000' : 'https://api.mintlify.com';
 
 export const MINT_SEARCH_AUTOCOMPLETE = `${MINTBASE}/search/autocomplete`;
 export const MINT_SEARCH_RESULTS = `${MINTBASE}/search/results`;
