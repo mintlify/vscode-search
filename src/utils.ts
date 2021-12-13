@@ -3,6 +3,8 @@ import { getLoginURI, REQUEST_ACCESS_URI } from './constants/api';
 import { ENTIRE_WORKSPACE_OPTION,
 	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, SIGN_IN_BUTTON, SUPPORTED_FILE_EXTENSIONS } from './constants/content';
+import { hasMagic } from 'glob';
+import * as minimatch from 'minimatch';
 
 export type File = {
 	path: string;
@@ -21,12 +23,15 @@ export const getRootPath = (): string => {
 const U18ARRAY_TO_MB = 1_048_576;
 const MAX_FILE_SIZE_IN_MB = 2;
 
-const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActivePath?: string): Promise<File[]> => {
+const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActivePath?: string, gitIgnore?: GitIgnore): Promise<File[]> => {
 	const files = await vscode.workspace.fs.readDirectory(root);
 	const filePromises = files.map(async (file) => {
 		const directoryName = file[0];
 		const directoryPath = `${root}/${directoryName}`;
 		const directoryPathUri = vscode.Uri.parse(directoryPath);
+		if (inGitIgnore(root, file, gitIgnore)) {
+			return;
+		}
 		// If filetype is a file
 		if (file[1] === 1 && isValidFiletype(directoryName)) {
 			const readFileRaw = await vscode.workspace.fs.readFile(directoryPathUri);
@@ -48,7 +53,7 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActi
 		}
 		// If is folder
 		else if (file[1] === 2 && isTraversablePath(directoryName)) {
-			await traverseFiles(directoryPathUri, filesContent, currentActivePath);
+			await traverseFiles(directoryPathUri, filesContent, currentActivePath, gitIgnore);
 		}
 
 	});
@@ -69,6 +74,108 @@ const isTraversablePath = (folderName: string): boolean => {
 	return !nonTraversable[folderName];
 };
 
+export type GitIgnore = {
+	topLevelDirectories: Set<string>;
+	topLevel: Set<string>;
+	folders: Set<string>;
+	both: Set<string>; 
+	globs: Set<string>;
+};
+
+const getGitIgnore = async (root: vscode.Uri): Promise<GitIgnore | undefined> => {
+	const files = await vscode.workspace.fs.readDirectory(root);
+	for (let i = 0; i < files.length; i++) {
+		if (files[i][0] == '.gitignore' && files[i][1] == 1) {
+			const directoryPath = `${root}/.gitignore`;
+			const directoryPathUri = vscode.Uri.parse(directoryPath);
+			const readFileRaw = await vscode.workspace.fs.readFile(directoryPathUri);
+			const gitIgnoreString = readFileRaw.toString();
+			const gitIgnoreElems = gitIgnoreString.split('\n').filter((elem) => {
+				return elem.trim().charAt(0) !== '#' && elem.trim().length !== 0;
+			}); // remove empty lines & comments
+			const topLevelDirectories : Set<string> = new Set();
+			const topLevel : Set<string> = new Set();
+			const folders : Set<string> = new Set();
+			const both : Set<string> = new Set();
+			const globs : Set<string> = new Set();
+			gitIgnoreElems.forEach((elem) => {
+				const trimmed = elem.trim();
+				const lastChar = trimmed[trimmed.length-1];
+				const removeLastSlash = trimmed.slice(0,-1);
+				if (hasMagic(trimmed)) {
+					globs.add(trimmed);
+				} else if (trimmed.charAt(0) === '/') { // if element starts with '/' it only matches with files/directories in the top level
+					// if element ends with '/' it only matches with directories
+					if (lastChar === '/') {
+						topLevelDirectories.add(`${root}${removeLastSlash}`);
+					} else {
+						topLevel.add(`${root}${trimmed}`);
+					}
+				} else if (trimmed.includes('/')) {
+					// if element ends with '/' it only matches with directories
+					if (lastChar === '/') {
+						folders.add(removeLastSlash);
+					} else {
+						both.add(trimmed);
+					}
+				} else {
+					both.add(trimmed);
+				}
+			});
+			const gitIgnore: GitIgnore = {
+				topLevelDirectories,
+				topLevel,
+				folders,
+				both,
+				globs
+			};
+			return gitIgnore;
+		}
+	}
+	return undefined;
+};
+
+const inGitIgnore = (root: vscode.Uri, file: any, gitIgnore?: GitIgnore) : boolean => {
+	if (gitIgnore == null) {
+		return false;
+	}
+	const directoryName = file[0];
+	const directoryPath = `${root}/${directoryName}`;
+
+	if (gitIgnore.topLevel.has(directoryPath) || gitIgnore.both.has(directoryName)) {
+		return true;
+	}
+	let ignore = false;
+	gitIgnore.both.forEach((elem) => {
+		if (directoryPath.slice(-elem.length) === elem) {
+			ignore = true;
+		}
+	});
+	if (ignore) { return true; }
+
+	if (file[1] == 2) { // is a folder
+		if (gitIgnore.topLevelDirectories.has(directoryPath)) {
+			return true;
+		}
+		let ignoreFolder = false;
+		gitIgnore.folders.forEach((gitIgnoreElem) => {
+			if (directoryPath.slice(-gitIgnoreElem.length) === gitIgnoreElem) {
+				ignoreFolder = true;
+			}
+		});
+		if (ignoreFolder) { return true; }
+	}
+	const path = directoryPath.slice(8);
+	let matchesGlob = false;
+	gitIgnore.globs.forEach((glob) => {
+		const globmatch = minimatch(path, glob, {dot: true, debug: true});
+		if (globmatch) {
+			matchesGlob = true;
+		}
+	});
+	return matchesGlob;
+};
+
 // Remove duplicate on backend
 const isValidFiletype = (fileName: string): boolean => {
 	const fileExtensionRegex = /(?:\.([^.]+))?$/;
@@ -79,7 +186,8 @@ const isValidFiletype = (fileName: string): boolean => {
 export const getFiles = async (option: string = ENTIRE_WORKSPACE_OPTION, currentActivePath?: string): Promise<File[]> => {
 	if (option === ENTIRE_WORKSPACE_OPTION) {
 		const root = vscode.workspace.workspaceFolders![0].uri;
-		const files = await traverseFiles(root, [], currentActivePath);
+		const gitIgnore = await getGitIgnore(root);
+		const files = await traverseFiles(root, [], currentActivePath, gitIgnore);
 		return files;
 	}
 
