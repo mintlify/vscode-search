@@ -3,8 +3,8 @@
 	"description": "The search engine in your codebase",
 	"icon": "img/icon.png",
 	"publisher": "mintlify",
-	"displayName": "Mintlify",
-	"version": "1.0.6",
+	"displayName": "Mintlify Search Engine",
+	"version": "1.0.14",
 	"repository": {
 		"url": "https://github.com/mintlify/vscode"
 	},
@@ -100,20 +100,14 @@
 					"when": "view == search"
 				}
 			]
-		},
-		"productIconThemes": [
-			{
-				"id": "mintlify-icons",
-				"label": "Mintlify",
-				"path": "./icons/mintlify-product-icon-theme.json"
-			}
-		]
+		}
 	},
 	"scripts": {
 		"webpack": "webpack --mode development",
 		"package": "webpack --mode production --devtool hidden-source-map",
 		"test-compile": "tsc -p ./",
-		"dev": "npm run webpack && vsce package && code --install-extension search-1.0.6.vsix && rm search-1.0.6.vsix",
+		"dev": "npm run webpack && vsce package && code --install-extension search-1.0.14.vsix && rm search-1.0.14.vsix",
+		"dev-insiders": "npm run webpack && vsce package && code-insiders --install-extension search-1.0.14.vsix && rm search-1.0.14.vsix",
 		"publish": "npm run package && vsce publish"
 	},
 	"devDependencies": {
