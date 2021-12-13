@@ -30,7 +30,6 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActi
 		const directoryPath = `${root}/${directoryName}`;
 		const directoryPathUri = vscode.Uri.parse(directoryPath);
 		if (inGitIgnore(root, file, gitIgnore)) {
-			console.log("IN GITIGNORE: ", directoryPath);
 			return;
 		}
 		// If filetype is a file
@@ -50,14 +49,11 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActi
 				return;
 			}
 
-			console.log("AYO FILE ADDED: ", directoryPath);
 			filesContent.push(readFileContent);
 		}
 		// If is folder
 		else if (file[1] === 2 && isTraversablePath(directoryName)) {
-			await traverseFiles(directoryPathUri, filesContent, currentActivePath);
-		} else {
-			console.log("SKIPPED: ", directoryPath);
+			await traverseFiles(directoryPathUri, filesContent, currentActivePath, gitIgnore);
 		}
 
 	});
@@ -167,10 +163,12 @@ const inGitIgnore = (root: vscode.Uri, file: any, gitIgnore?: GitIgnore) : boole
 		});
 		if (ignoreFolder) { return true; }
 	}
-	const path = `${root.toString}/${directoryName}`;
+	const path = directoryPath.slice(8);
 	let matchesGlob = false;
 	gitIgnore.globs.forEach((glob) => {
-		if (minimatch(path, glob)) {
+		const globmatch = minimatch(path, glob, {dot: true, debug: true});
+		if (globmatch) {
+			console.log('GLOB!', path, ' + ', glob);
 			matchesGlob = true;
 		}
 	});
