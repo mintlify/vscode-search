@@ -13,7 +13,7 @@ import { MINT_SEARCH_DESCRIPTION,
 	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './constants/content';
 import { getLogoutURI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK,
-	MINT_SEARCH_ANSWER_BOX_FEEDBACK } from './constants/api';
+	MINT_SEARCH_ANSWER_BOX_FEEDBACK, MINT_IS_USER_HAPPY } from './constants/api';
 import HistoryProviderProvider from './history/HistoryTree';
 import { LocalStorageService, SearchResult } from './constants/types';
 import { initializeAuth } from './url';
@@ -107,6 +107,14 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
+	type ResponseResults = {
+		results: SearchResult[],
+		answer: string | null,
+		objectID: string,
+		errors?: string[],
+		shouldAskForFeedback?: boolean
+	};
+
 	const searchCommand = vscode.commands.registerCommand('mintlify.search', async (
 		{ search, onGetResults = () => {} }
 	) => {
@@ -123,14 +131,7 @@ export function activate(context: vscode.ExtensionContext) {
 			return new Promise(async (resolve, reject) => {
 				try {
 					const files = await getFiles(vscode.window.activeTextEditor?.document.uri.path);
-					const searchRes: {
-							data: {
-								results: SearchResult[],
-								answer: string | null,
-								objectID: string,
-								errors?: string[]
-							}
-					} = await axios.post(MINT_SEARCH_RESULTS, {
+					const searchRes: { data: ResponseResults } = await axios.post(MINT_SEARCH_RESULTS, {
 						files,
 						search,
 						root,
@@ -141,7 +142,7 @@ export function activate(context: vscode.ExtensionContext) {
 					});
 
 					onGetResults();
-					const { results: searchResults, answer, objectID, errors: searchErrors } = searchRes.data;
+					const { results: searchResults, answer, objectID, errors: searchErrors, shouldAskForFeedback } = searchRes.data;
 					searchErrors?.map((error: string) => {
 						vscode.window.showWarningMessage(error);
 					});
@@ -306,7 +307,30 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 					});
 
-					resultsPick.onDidHide(() => removePickerColorScheme());
+					resultsPick.onDidHide(async () => {
+						removePickerColorScheme();
+						if (shouldAskForFeedback) {
+							const answer = await vscode.window.showInformationMessage('Are you happy with Mint Search?', '👍 Yes', '🙅‍♂️ No');
+							let isHappy;
+							switch (answer) {
+								case '👍 Yes':
+									isHappy = true;
+									break;
+								case '🙅‍♂️ No':
+									isHappy = false;
+									break;
+								default:
+									break;
+							}
+
+							try {
+								const feedbackResponse = await axios.post(MINT_IS_USER_HAPPY, { authToken, isHappy });
+								vscode.window.showInformationMessage(feedbackResponse.data.message);
+							} catch {
+								vscode.window.showErrorMessage('Error submitting feedback');
+							}
+						}
+					});
 					vscode.commands.executeCommand('mintlify.refreshHistory');
 
 					resolve('Completed search');
