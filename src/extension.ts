@@ -323,11 +323,13 @@ export function activate(context: vscode.ExtensionContext) {
 									break;
 							}
 
-							try {
-								const feedbackResponse = await axios.post(MINT_IS_USER_HAPPY, { authToken, isHappy });
-								vscode.window.showInformationMessage(feedbackResponse.data.message);
-							} catch {
-								vscode.window.showErrorMessage('Error submitting feedback');
+							if (isHappy != null) {
+								try {
+									const feedbackResponse = await axios.post(MINT_IS_USER_HAPPY, { authToken, isHappy });
+									vscode.window.showInformationMessage(feedbackResponse.data.message);
+								} catch {
+									vscode.window.showErrorMessage('Error submitting feedback');
+								}
 							}
 						}
 					});
