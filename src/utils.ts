@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { getLoginURI, REQUEST_ACCESS_URI } from './constants/api';
-import { ENTIRE_WORKSPACE_OPTION,
-	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
+import { REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, SIGN_IN_BUTTON, SUPPORTED_FILE_EXTENSIONS } from './constants/content';
 
 export type File = {
@@ -76,42 +75,10 @@ const isValidFiletype = (fileName: string): boolean => {
 	return fileExtension != null && SUPPORTED_FILE_EXTENSIONS.includes(fileExtension);
 };
 
-export const getFiles = async (option: string = ENTIRE_WORKSPACE_OPTION, currentActivePath?: string): Promise<File[]> => {
-	if (option === ENTIRE_WORKSPACE_OPTION) {
-		const root = vscode.workspace.workspaceFolders![0].uri;
-		const files = await traverseFiles(root, [], currentActivePath);
-		return files;
-	}
-
-	else if (option === THIS_FILE_OPTION) {
-		const document = vscode.window.activeTextEditor?.document;
-		if (document === undefined) {
-			return [];
-		}
-
-		const { fileName } = document;
-		const fileNamePath = fileName.split('/');
-
-		const file = {
-			path: document.uri.toString(),
-			filename: fileNamePath[fileNamePath.length - 1],
-			content: document.getText(),
-		};
-		return [file];
-	}
-
-	return [];
-};
-
-export const getOptionShort = (option: string = ENTIRE_WORKSPACE_OPTION): string => {
-	switch (option) {
-		case ENTIRE_WORKSPACE_OPTION:
-			return 'workspace';
-		case THIS_FILE_OPTION:
-			return 'file';
-		default:
-			return '';
-	}
+export const getFiles = async (currentActivePath?: string): Promise<File[]> => {
+	const root = vscode.workspace.workspaceFolders![0].uri;
+	const files = await traverseFiles(root, [], currentActivePath);
+	return files;
 };
 
 export const showLoginMessage = () => {

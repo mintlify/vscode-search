@@ -20,7 +20,6 @@ export const ANSWER_BOX_FEEDBACK = {
 	}
 };
 
-export const ENTIRE_WORKSPACE_OPTION = 'Search entire workspace';
-export const THIS_FILE_OPTION = 'Search this file';
+export const MINT_SEARCH_DESCRIPTION = '- Mint Search';
 
 export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'md', 'env'];

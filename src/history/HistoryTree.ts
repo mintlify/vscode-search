@@ -3,7 +3,6 @@ import TimeAgo from 'javascript-time-ago';
 import axios from 'axios';
 import { MINT_SEARCH_HISTORY } from '../constants/api';
 import { getRootPath } from '../utils';
-import { ENTIRE_WORKSPACE_OPTION } from '../constants/content';
 // @ts-ignore
 import en from 'javascript-time-ago/locale/en';
 
@@ -59,7 +58,6 @@ class SearchHistory extends vscode.TreeItem {
       command: 'mintlify.search',
       arguments: [{
         search: this.search,
-        option: ENTIRE_WORKSPACE_OPTION,
       }]
     };
     this.command = onClickCommand;

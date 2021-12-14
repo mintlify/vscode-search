@@ -4,13 +4,12 @@ import { getFiles, showErrorMessage,
 	showLoginMessage, showStatusBarItem,
 	showSettings,
 	getRootPath,
-	getOptionShort,
 	configUserSettings,
 	refreshHistoryTree,
 	changePickerColorScheme,
 	removePickerColorScheme } from './utils';
-import { ENTIRE_WORKSPACE_OPTION,
-	THIS_FILE_OPTION, REQUEST_ACCESS_BUTTON,
+import { MINT_SEARCH_DESCRIPTION,
+	REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './constants/content';
 import { getLogoutURI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK,
@@ -53,8 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
 			let itemResults: vscode.QuickPickItem[] = [];
 			let autoSuggestions: string[] = [];
 			itemResults = [
-				{label: value, description: ENTIRE_WORKSPACE_OPTION },
-				{label: value, description: THIS_FILE_OPTION },
+				{label: value, description: MINT_SEARCH_DESCRIPTION },
 			];
 
 			searchPick.items = itemResults;
@@ -75,8 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
 				};
 			});
 			itemResults = [
-				{label: value, description: ENTIRE_WORKSPACE_OPTION },
-				{label: value, description: THIS_FILE_OPTION },
+				{label: value, description: MINT_SEARCH_DESCRIPTION },
 				...autoSuggestionResults
 			];
 
@@ -87,7 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
 		searchPick.onDidChangeSelection(async (selectedItems) => {
 			const selected = selectedItems[0];
 
-			const { label: search, description: option } = selected;
+			const { label: search } = selected;
 			if (!search) {
 				return null;
 			}
@@ -97,7 +94,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 
 			searchPick.value = search;
-			vscode.commands.executeCommand('mintlify.search', { search, option, onGetResults: () => {
+			vscode.commands.executeCommand('mintlify.search', { search, onGetResults: () => {
 				isGettingResults = true;
 				searchPick.hide();
 			}});
@@ -111,22 +108,21 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	const searchCommand = vscode.commands.registerCommand('mintlify.search', async (
-		{ search, option, onGetResults = () => {} }
+		{ search, onGetResults = () => {} }
 	) => {
 		changePickerColorScheme();
 		const root = getRootPath();
 		// Retrieve tokens again to use latest
 		const authToken = storageManager.getValue('authToken');
-		const optionShort = getOptionShort(option);
 
 		vscode.window.withProgress({
 			location: vscode.ProgressLocation.Notification,
-			title: `🔎 Mint searching across the ${optionShort}`,
+			title: '🔎 Mint searching across the workspace',
 		},
 		() => {
 			return new Promise(async (resolve, reject) => {
 				try {
-					const files = await getFiles(option, vscode.window.activeTextEditor?.document.uri.path);
+					const files = await getFiles(vscode.window.activeTextEditor?.document.uri.path);
 					const searchRes: {
 							data: {
 								results: SearchResult[],
@@ -138,7 +134,6 @@ export function activate(context: vscode.ExtensionContext) {
 						files,
 						search,
 						root,
-						range: optionShort,
 						authToken
 					}, {
 						maxContentLength: Infinity,
