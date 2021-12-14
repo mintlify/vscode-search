@@ -267,13 +267,15 @@ export const changePickerColorScheme = () => {
       "quickInput.foreground": "#FFF",
       "quickInputList.focusBackground": "#0C8C5E80",
       "list.highlightForeground": "#18E299A1",
-      "focusBorder": "#18E29945"
+      "focusBorder": "#18E29945",
+			"progressBar.background": "#0C8C5E"
     },
     "[*Light*]": {
       "quickInputList.focusBackground": "#0C8C5E",
       "list.highlightForeground": "#1B4637",
       "list.focusHighlightForeground": "#E8FEF6",
-      "focusBorder": "#0C8C5E"
+      "focusBorder": "#0C8C5E",
+			"progressBar.background": "#0C8C5E"
     }
 	};
 	workbenchConfig.update('colorCustomizations', {...currentColorScheme, ...mintlifyColorScheme}, true);
