@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 	const searchbar = vscode.commands.registerCommand('mintlify.searchbar', async () => {
 		changePickerColorScheme();
 		const searchPick = vscode.window.createQuickPick();
-		searchPick.title = "Mint Search";
+		searchPick.title = "Mintlify";
 		searchPick.placeholder = "What would you like to find?";
 		searchPick.show();
 		
