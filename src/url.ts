@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
 import { URLSearchParams } from 'url';
-import { showInformationMessage, refreshHistoryTree, showLoginMessage } from './utils';
+import { showInformationMessage, refreshHistoryTree, showLoginMessage } from './helpers/ui';
 import { MINT_USER_CODE } from './constants/api';
 import { LocalStorageService } from './constants/types';
 

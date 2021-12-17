@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
-import { getFiles, showErrorMessage,
+import { showErrorMessage,
 	showLoginMessage, showStatusBarItem,
 	showSettings,
-	getRootPath,
 	configUserSettings,
 	refreshHistoryTree,
 	changePickerColorScheme,
-	removePickerColorScheme } from './utils';
+	removePickerColorScheme } from './helpers/ui';
+import { getRootPath, getFiles } from './helpers/content';
 import { MINT_SEARCH_DESCRIPTION,
 	REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './constants/content';
@@ -39,9 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
 		searchPick.placeholder = "What would you like to find?";
 		searchPick.show();
 		
-		// Retrieve tokens for auth
 		const authToken = storageManager.getValue('authToken');
-		// Retrieve for identification
 		const root = getRootPath();
 
 		searchPick.onDidChangeValue(async (value: string) => {
@@ -120,7 +118,6 @@ export function activate(context: vscode.ExtensionContext) {
 	) => {
 		changePickerColorScheme();
 		const root = getRootPath();
-		// Retrieve tokens again to use latest
 		const authToken = storageManager.getValue('authToken');
 
 		vscode.window.withProgress({

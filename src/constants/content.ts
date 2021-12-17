@@ -21,4 +21,3 @@ export const ANSWER_BOX_FEEDBACK = {
 };
 
 export const MINT_SEARCH_DESCRIPTION = '- Mint Search';
-export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'java', 'md', 'env'];
