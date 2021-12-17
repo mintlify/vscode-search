@@ -166,7 +166,7 @@ const inGitIgnore = (root: vscode.Uri, file: any, gitIgnore?: GitIgnore) : boole
 	const path = directoryPath.slice(8);
 	let matchesGlob = false;
 	gitIgnore.globs.forEach((glob) => {
-		const globmatch = minimatch(path, glob, {dot: true, debug: true});
+		const globmatch = minimatch(path, glob, {dot: true});
 		if (globmatch) {
 			matchesGlob = true;
 		}
@@ -183,6 +183,7 @@ const isValidFiletype = (fileName: string): boolean => {
 
 export const getFiles = async (currentActivePath?: string): Promise<File[]> => {
 	const root = vscode.workspace.workspaceFolders![0].uri;
-	const files = await traverseFiles(root, [], currentActivePath);
+	const gitIgnore = await getGitIgnore(root);
+	const files = await traverseFiles(root, [], currentActivePath, gitIgnore);
 	return files;
 };
