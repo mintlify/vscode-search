@@ -16,6 +16,7 @@ import { getLogoutURI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_ANSWER_BOX_FEEDBACK, MINT_IS_USER_HAPPY } from './constants/api';
 import HistoryProviderProvider from './history/HistoryTree';
 import { LocalStorageService, SearchResult } from './constants/types';
+import { preprocess } from './helpers/content';
 import { initializeAuth } from './url';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -40,7 +41,8 @@ export function activate(context: vscode.ExtensionContext) {
 		searchPick.show();
 		
 		const authToken = storageManager.getValue('authToken');
-		const root = getRootPath();
+
+		preprocess(authToken);
 
 		searchPick.onDidChangeValue(async (value: string) => {
 			if (!value) {
@@ -58,7 +60,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (authToken) {
 				const { data: autoCompleteData }: {data: string[]} = await axios.post(MINT_SEARCH_AUTOCOMPLETE, {
 					query: value,
-					root,
+					root: getRootPath(),
 					authToken,
 				});
 

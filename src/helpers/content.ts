@@ -1,21 +1,15 @@
 import * as vscode from 'vscode';
 import { hasMagic } from 'glob';
 import * as minimatch from 'minimatch';
+import { File } from '../constants/types';
+import { MINT_SEARCH_PREPROCESS } from '../constants/api';
+import axios from 'axios';
 
 export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'java', 'md', 'env'];
 
-export type File = {
-	path: string;
-	filename: string;
-	content: string;
-	isCurrentActiveFile?: boolean;
-};
-
 export const getRootPath = (): string => {
-	const workspaceRoot = vscode.workspace.workspaceFolders![0];
-	const root = workspaceRoot?.uri?.path;
-
-	return root;
+	const workspaceRoot = vscode.workspace?.workspaceFolders![0];
+	return workspaceRoot?.uri?.path;
 };
 
 const U18ARRAY_TO_MB = 1_048_576;
@@ -27,7 +21,7 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActi
 		const directoryName = file[0];
 		const directoryPath = `${root}/${directoryName}`;
 		const directoryPathUri = vscode.Uri.parse(directoryPath);
-		if (inGitIgnore(root, file, gitIgnore)) {
+		if (!isTraversablePath(directoryName) || inGitIgnore(root, file, gitIgnore)) {
 			return;
 		}
 		// If filetype is a file
@@ -50,7 +44,7 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActi
 			filesContent.push(readFileContent);
 		}
 		// If is folder
-		else if (file[1] === 2 && isTraversablePath(directoryName)) {
+		else if (file[1] === 2) {
 			await traverseFiles(directoryPathUri, filesContent, currentActivePath, gitIgnore);
 		}
 
@@ -182,8 +176,19 @@ const isValidFiletype = (fileName: string): boolean => {
 };
 
 export const getFiles = async (currentActivePath?: string): Promise<File[]> => {
-	const root = vscode.workspace.workspaceFolders![0].uri;
+	const root = vscode.workspace?.workspaceFolders![0]?.uri;
 	const gitIgnore = await getGitIgnore(root);
 	const files = await traverseFiles(root, [], currentActivePath, gitIgnore);
 	return files;
+};
+
+export const preprocess = async (authToken: string | null) => {
+  const files = await getFiles();
+  const root = getRootPath();
+
+  await axios.post(MINT_SEARCH_PREPROCESS, {
+    authToken,
+    files,
+    root,
+  });
 };
