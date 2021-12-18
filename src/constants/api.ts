@@ -8,6 +8,8 @@ export const MINT_SEARCH_RESULTS = `${MINTBASE}/search/results`;
 export const MINT_SEARCH_FEEDBACK = `${MINTBASE}/search/feedback`;
 export const MINT_SEARCH_ANSWER_BOX_FEEDBACK = `${MINTBASE}/search/feedback/answerbox`;
 export const MINT_SEARCH_HISTORY = `${MINTBASE}/search/history`;
+export const MINT_SEARCH_PREPROCESS = `${MINTBASE}/search/preprocess`;
+
 export const MINT_IS_USER_HAPPY = `${MINTBASE}/user/isHappy`;
 
 export const MINT_USER_CODE = `${MINTBASE}/user/code`;

@@ -19,3 +19,10 @@ export class LocalStorageService {
     this.storage.update(key, value);
   }
 }
+
+export type File = {
+	path: string;
+	filename: string;
+	content: string;
+	isCurrentActiveFile?: boolean;
+};
