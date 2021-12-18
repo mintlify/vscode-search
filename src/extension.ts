@@ -129,9 +129,7 @@ export function activate(context: vscode.ExtensionContext) {
 		() => {
 			return new Promise(async (resolve, reject) => {
 				try {
-					const files = await getFiles(vscode.window.activeTextEditor?.document.uri.path);
 					const searchRes: { data: ResponseResults } = await axios.post(MINT_SEARCH_RESULTS, {
-						files,
 						search,
 						root,
 						authToken

@@ -183,7 +183,7 @@ export const getFiles = async (currentActivePath?: string): Promise<File[]> => {
 };
 
 export const preprocess = async (authToken: string | null) => {
-  const files = await getFiles();
+  const files = await getFiles(vscode.window.activeTextEditor?.document.uri.path);
   const root = getRootPath();
 
   await axios.post(MINT_SEARCH_PREPROCESS, {
