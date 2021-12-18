@@ -11,6 +11,11 @@ export type File = {
 	isCurrentActiveFile?: boolean;
 };
 
+export type TraversedFileData = {
+	files: File[];
+	skippedFileTypes: Set<string>;
+};
+
 export const getRootPath = (): string => {
 	const workspaceRoot = vscode.workspace.workspaceFolders![0];
 	const root = workspaceRoot?.uri?.path;
@@ -20,9 +25,10 @@ export const getRootPath = (): string => {
 
 const U18ARRAY_TO_MB = 1_048_576;
 const MAX_FILE_SIZE_IN_MB = 2;
-
-const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActivePath?: string, gitIgnore?: GitIgnore): Promise<File[]> => {
+ 
+const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActivePath?: string, gitIgnore?: GitIgnore): Promise<TraversedFileData> => {
 	const files = await vscode.workspace.fs.readDirectory(root);
+	const skippedFileTypes : Set<string> = new Set();
 	const filePromises = files.map(async (file) => {
 		const directoryName = file[0];
 		const directoryPath = `${root}/${directoryName}`;
@@ -31,23 +37,34 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActi
 			return;
 		}
 		// If filetype is a file
-		if (file[1] === 1 && isValidFiletype(directoryName)) {
-			const readFileRaw = await vscode.workspace.fs.readFile(directoryPathUri);
-			const readFileContent = {
-				path: directoryPath,
-				filename: directoryName,
-				content: readFileRaw.toString(),
-				isCurrentActiveFile: currentActivePath != null && directoryPath.includes(currentActivePath)
-			};
+		if (file[1] === 1) {
+			const fileExtensionRegex = /(?:\.([^.]+))?$/;
+			const fileExtension = fileExtensionRegex.exec(directoryName)![1];
+			if (isValidFiletype(fileExtension)) {
+				
+				const readFileRaw = await vscode.workspace.fs.readFile(directoryPathUri);
+				const readFileContent = {
+					path: directoryPath,
+					filename: directoryName,
+					content: readFileRaw.toString(),
+					isCurrentActiveFile: currentActivePath != null && directoryPath.includes(currentActivePath)
+				};
 
-			// Check file size to ensure that it's not too large
-			const fileSizeInMB = readFileRaw.length / U18ARRAY_TO_MB;
-			if (fileSizeInMB > MAX_FILE_SIZE_IN_MB) {
-				vscode.window.showWarningMessage(`${directoryName} is not being searched as the file is too large`);
-				return;
+				// Check file size to ensure that it's not too large
+				const fileSizeInMB = readFileRaw.length / U18ARRAY_TO_MB;
+				if (fileSizeInMB > MAX_FILE_SIZE_IN_MB) {
+					vscode.window.showWarningMessage(`${directoryName} is not being searched as the file is too large`);
+					return;
+				}
+
+				filesContent.push(readFileContent);
+			} else {
+				const typesToIgnore = ['gitignore', 'txt'];
+				if (!typesToIgnore.includes(fileExtension)) {
+					skippedFileTypes.add(fileExtension);
+				}
 			}
-
-			filesContent.push(readFileContent);
+			
 		}
 		// If is folder
 		else if (file[1] === 2 && isTraversablePath(directoryName)) {
@@ -56,7 +73,7 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActi
 
 	});
 	await Promise.all(filePromises);
-	return filesContent;
+	return {files: filesContent, skippedFileTypes};
 };
 
 const isTraversablePath = (folderName: string): boolean => {
@@ -175,15 +192,13 @@ const inGitIgnore = (root: vscode.Uri, file: any, gitIgnore?: GitIgnore) : boole
 };
 
 // Remove duplicate on backend
-const isValidFiletype = (fileName: string): boolean => {
-	const fileExtensionRegex = /(?:\.([^.]+))?$/;
-	const fileExtension = fileExtensionRegex.exec(fileName)![1];
+const isValidFiletype = (fileExtension: string): boolean => {
 	return fileExtension != null && SUPPORTED_FILE_EXTENSIONS.includes(fileExtension);
 };
 
-export const getFiles = async (currentActivePath?: string): Promise<File[]> => {
+export const getFiles = async (currentActivePath?: string): Promise<TraversedFileData> => {
 	const root = vscode.workspace.workspaceFolders![0].uri;
 	const gitIgnore = await getGitIgnore(root);
-	const files = await traverseFiles(root, [], currentActivePath, gitIgnore);
-	return files;
+	const traversedFileData : TraversedFileData = await traverseFiles(root, [], currentActivePath, gitIgnore);
+	return traversedFileData;
 };
