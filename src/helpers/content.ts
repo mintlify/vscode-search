@@ -182,7 +182,7 @@ export const getFiles = async (currentActivePath?: string): Promise<File[]> => {
 	return files;
 };
 
-export const preprocess = async (authToken: string | null) => {
+export const preprocess = async (authToken: string | null, callback: () => void) => {
   const files = await getFiles(vscode.window.activeTextEditor?.document.uri.path);
   const root = getRootPath();
 
@@ -191,4 +191,6 @@ export const preprocess = async (authToken: string | null) => {
     files,
     root,
   });
+
+  callback();
 };
