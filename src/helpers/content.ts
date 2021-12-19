@@ -187,7 +187,7 @@ const isValidFiletype = (fileExtension: string): boolean => {
 };
 
 export const getTraversedFileData = async (currentActivePath?: string): Promise<TraversedFileData> => {
-	const root = vscode.workspace.workspaceFolders![0].uri;
+	const root = vscode.workspace?.workspaceFolders![0]?.uri;
 	const gitIgnore = await getGitIgnore(root);
 	const traversedFileData : TraversedFileData = await traverseFiles(root, [], currentActivePath, gitIgnore);
 	return traversedFileData;
