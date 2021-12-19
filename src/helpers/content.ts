@@ -1,26 +1,15 @@
 import * as vscode from 'vscode';
 import { hasMagic } from 'glob';
 import * as minimatch from 'minimatch';
+import { File, TraversedFileData } from '../constants/types';
+import { MINT_SEARCH_PREPROCESS } from '../constants/api';
+import axios from 'axios';
 
 export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'java', 'md', 'env'];
 
-export type File = {
-	path: string;
-	filename: string;
-	content: string;
-	isCurrentActiveFile?: boolean;
-};
-
-export type TraversedFileData = {
-	files: File[];
-	skippedFileTypes: Set<string>;
-};
-
 export const getRootPath = (): string => {
-	const workspaceRoot = vscode.workspace.workspaceFolders![0];
-	const root = workspaceRoot?.uri?.path;
-
-	return root;
+	const workspaceRoot = vscode.workspace?.workspaceFolders![0];
+	return workspaceRoot?.uri?.path;
 };
 
 const U18ARRAY_TO_MB = 1_048_576;
@@ -33,7 +22,7 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActi
 		const directoryName = file[0];
 		const directoryPath = `${root}/${directoryName}`;
 		const directoryPathUri = vscode.Uri.parse(directoryPath);
-		if (inGitIgnore(root, file, gitIgnore)) {
+		if (!isTraversablePath(directoryName) || inGitIgnore(root, file, gitIgnore)) {
 			return;
 		}
 		// If filetype is a file
@@ -67,7 +56,7 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActi
 			
 		}
 		// If is folder
-		else if (file[1] === 2 && isTraversablePath(directoryName)) {
+		else if (file[1] === 2) {
 			await traverseFiles(directoryPathUri, filesContent, currentActivePath, gitIgnore);
 		}
 
@@ -201,4 +190,17 @@ export const getFiles = async (currentActivePath?: string): Promise<TraversedFil
 	const gitIgnore = await getGitIgnore(root);
 	const traversedFileData : TraversedFileData = await traverseFiles(root, [], currentActivePath, gitIgnore);
 	return traversedFileData;
+};
+
+export const preprocess = async (authToken: string | null, callback: () => void) => {
+  const files = await getFiles(vscode.window.activeTextEditor?.document.uri.path);
+  const root = getRootPath();
+
+  await axios.post(MINT_SEARCH_PREPROCESS, {
+    authToken,
+    files,
+    root,
+  });
+
+  callback();
 };

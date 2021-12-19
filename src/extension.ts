@@ -7,7 +7,7 @@ import { showErrorMessage,
 	refreshHistoryTree,
 	changePickerColorScheme,
 	removePickerColorScheme } from './helpers/ui';
-import { getRootPath, getFiles, TraversedFileData } from './helpers/content';
+import { getRootPath } from './helpers/content';
 import { MINT_SEARCH_DESCRIPTION,
 	REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './constants/content';
@@ -15,7 +15,8 @@ import { getLogoutURI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK,
 	MINT_SEARCH_ANSWER_BOX_FEEDBACK, MINT_IS_USER_HAPPY } from './constants/api';
 import HistoryProviderProvider from './history/HistoryTree';
-import { LocalStorageService, SearchResult } from './constants/types';
+import { LocalStorageService, SearchResult, TraversedFileData } from './constants/types';
+import { preprocess } from './helpers/content';
 import { initializeAuth } from './url';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -25,6 +26,8 @@ export function activate(context: vscode.ExtensionContext) {
 	if (!authToken) {
 		showLoginMessage();
 	}
+
+	let isPreprocessing = false;
 
 	// Set default settings
 	configUserSettings();
@@ -40,8 +43,10 @@ export function activate(context: vscode.ExtensionContext) {
 		searchPick.show();
 		
 		const authToken = storageManager.getValue('authToken');
-		const root = getRootPath();
-
+		isPreprocessing = true;
+		preprocess(authToken, () => {
+			isPreprocessing = false;
+		});
 		searchPick.onDidChangeValue(async (value: string) => {
 			if (!value) {
 				return searchPick.items = [];
@@ -58,7 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (authToken) {
 				const { data: autoCompleteData }: {data: string[]} = await axios.post(MINT_SEARCH_AUTOCOMPLETE, {
 					query: value,
-					root,
+					root: getRootPath(),
 					authToken,
 				});
 
@@ -127,224 +132,226 @@ export function activate(context: vscode.ExtensionContext) {
 		() => {
 			return new Promise(async (resolve, reject) => {
 				try {
-					const { files, skippedFileTypes } = await getFiles(vscode.window.activeTextEditor?.document.uri.path);
-					const resultsPick = vscode.window.createQuickPick();
-					let resultItems: vscode.QuickPickItem[];
-					let answerBoxLineCount = 0;
-					if (files.length > 0) {
-						let skippedFileTypesStr = '';
-						skippedFileTypes.forEach(function(elem){
-							if (elem !== null) {
-								skippedFileTypesStr += '.' + elem + ', ';
-							}
-						});
-						skippedFileTypesStr = skippedFileTypesStr.slice(0, -2);
-						vscode.window.showWarningMessage(`Files of type ${skippedFileTypesStr} are not being searched because the language is not supported.`);
-						const searchRes: { data: ResponseResults } = await axios.post(MINT_SEARCH_RESULTS, {
-							files,
-							search,
-							root,
-							authToken
-						}, {
-							maxContentLength: Infinity,
-							maxBodyLength: Infinity,
-						});
-						onGetResults();
-						const { results: searchResults, answer, objectID, errors: searchErrors, shouldAskForFeedback } = searchRes.data;
-						searchErrors?.map((error: string) => {
-							vscode.window.showWarningMessage(error);
-						});
-						let lastContent = '';
-						let spacesId = '';
-						const searchResultsWithSpacesId: SearchResult[] = searchResults.map((result) => {
-							if (result.content === lastContent) {
-								spacesId += ' ';
-							} else {
-								spacesId = '';
-							}
-							
-							lastContent = result.content;
-
-							return {
-								...result,
-								content: result.content + spacesId,
-							};
-						});
-						resultItems = searchResultsWithSpacesId.map((result) => {
-							return {
-								label: '↦',
-								description: result.content,
-								detail: result.filename,
-							};
-						});
-						// Inject answer to the front
-						if (answer) {
-							const answerByLine = answer.replace(/(?![^\n]{1,64}$)([^\n]{1,64})\s/g, '$1\n').split('\n');
-							answerBoxLineCount = answerByLine.length;
-							const itemsByLine =  answerByLine.map((line: string, i: number) => {
+					const waitForPreprocessing = async (timeElapsed = 0) => {
+						if (timeElapsed > 8000) {
+							vscode.window.showErrorMessage('Unable to process files for search');
+							return reject();
+						}
+						if (isPreprocessing) {
+							const timeoutDuration = 50;
+							setTimeout(() => waitForPreprocessing(timeElapsed + timeoutDuration), timeoutDuration);
+						} else {
+							const searchRes: { data: ResponseResults } = await axios.post(MINT_SEARCH_RESULTS, {
+								search,
+								root,
+								authToken
+							}, {
+								maxContentLength: Infinity,
+								maxBodyLength: Infinity,
+							});
+		
+							onGetResults();
+							const { results: searchResults, answer, objectID, errors: searchErrors, shouldAskForFeedback } = searchRes.data;
+							searchErrors?.map((error: string) => {
+								vscode.window.showWarningMessage(error);
+							});
+		
+							let lastContent = '';
+							let spacesId = '';
+							const searchResultsWithSpacesId: SearchResult[] = searchResults.map((result) => {
+								if (result.content === lastContent) {
+									spacesId += ' ';
+								} else {
+									spacesId = '';
+								}
+								
+								lastContent = result.content;
+		
 								return {
-									label: i === 0 ? `$(lightbulb) ${line}` : line,
-									alwaysShow: true
+									...result,
+									content: result.content + spacesId,
 								};
 							});
-							resultItems = [...itemsByLine, ...resultItems];
-						} else if (resultItems.length === 0) {
-							resultItems = [
-								{
-									label: '📭',
-									description: 'No results found. Try broadening your search',
-									alwaysShow: true,
-								}
-							];
-						}
-						resultsPick.onDidChangeSelection(async (selectedItems) => {
-							const selectedItem = selectedItems[0];
-							let selectedIndex = resultsPick.items.findIndex(
-								(result) => result.label === selectedItem.label
-								&& result.description === selectedItem.description
-								&& result.detail === selectedItem.detail
-							);
-							const isAnswerBoxSelected = selectedIndex < answerBoxLineCount;
-							if (isAnswerBoxSelected) {
-								axios.put(MINT_SEARCH_FEEDBACK, {
-									authToken,
-									objectID,
-									isAnswerBoxSelected
-								});
-								const { useful, notEnoughInfo, incorrect } = ANSWER_BOX_FEEDBACK.selections;
-								vscode.window.showInformationMessage(ANSWER_BOX_FEEDBACK.label, useful.text, notEnoughInfo.text, incorrect.text)
-									.then(async (selection) => {
-										let answerBoxFeedbackScore;
-										switch (selection) {
-											case useful.text:
-												answerBoxFeedbackScore = useful.score;
-												break;
-											case notEnoughInfo.text:
-												answerBoxFeedbackScore = notEnoughInfo.score;
-												break;
-											case incorrect.text:
-												answerBoxFeedbackScore = incorrect.score;
-												break;
-											default:
-												break;
-										}
-	
-										try {
-											await axios.put(MINT_SEARCH_ANSWER_BOX_FEEDBACK, {
-												authToken,
-												objectID,
-												score: answerBoxFeedbackScore
-											});
 		
-											vscode.window.showInformationMessage('Your feedback has been submitted');
-										} catch {
-											vscode.window.showErrorMessage('An error has occurred while submitting feedback');
-										}
-									});
-								
-								resultsPick.hide();
-								return;
-							}
-							if (answerBoxLineCount > 0) {
-								selectedIndex -= answerBoxLineCount;
-							}
-	
-							const selectedResult = searchResultsWithSpacesId[selectedIndex];
-	
-							const { path, lineStart, lineEnd } = selectedResult;
-							const filePathUri = vscode.Uri.parse(path);
-							const startPosition = new vscode.Position(lineStart, 0);
-							const endPosition = new vscode.Position(lineEnd, 9999);
-							const selectedRange = new vscode.Range(startPosition, endPosition);
-							await vscode.window.showTextDocument(filePathUri, {
-								selection: selectedRange,
+							let answerBoxLineCount = 0;
+							let resultItems: vscode.QuickPickItem[] = searchResultsWithSpacesId.map((result) => {
+								return {
+									label: '↦',
+									description: result.content,
+									detail: result.filename,
+								};
 							});
-	
-							try {
-								axios.put(MINT_SEARCH_FEEDBACK, {
-									authToken,
-									objectID,
-									engagedIndex: selectedIndex,
+		
+							// Inject answer to the front
+							if (answer) {
+								const answerByLine = answer.replace(/(?![^\n]{1,64}$)([^\n]{1,64})\s/g, '$1\n').split('\n');
+								answerBoxLineCount = answerByLine.length;
+								const itemsByLine =  answerByLine.map((line: string, i: number) => {
+									return {
+										label: i === 0 ? `$(lightbulb) ${line}` : line,
+										alwaysShow: true
+									};
 								});
+								resultItems = [...itemsByLine, ...resultItems];
+							} else if (resultItems.length === 0) {
+								resultItems = [
+									{
+										label: '📭',
+										description: 'No results found. Try broadening your search',
+										alwaysShow: true,
+									}
+								];
 							}
-							catch (error: any) {
-								const backendError = error?.response?.data;
-								if (backendError) {
-									const { shouldPromptWaitlist } = backendError;
-									showErrorMessage(backendError.error,
-										shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
-										shouldPromptWaitlist && LOGOUT_BUTTON
-									);
+		
+							const resultsPick = vscode.window.createQuickPick();
+							resultsPick.items = resultItems;
+							resultsPick.title = "Mint Search Results";
+							resultsPick.placeholder = search;
+							resultsPick.matchOnDescription = true;
+							resultsPick.matchOnDetail = true;
+							resultsPick.show();
+		
+							resultsPick.onDidChangeActive(async (activeItems) => {
+								const item = activeItems[0];
+								const itemContext = searchResultsWithSpacesId.find(
+									(searchResult) => searchResult.content === item.description && searchResult.filename === item.detail
+								);
+		
+								if (!itemContext) {return null;}
+		
+								const { path, lineStart, lineEnd } = itemContext;
+								const filePathUri = vscode.Uri.parse(path);
+								const startPosition = new vscode.Position(lineStart, 0);
+								const endPosition = new vscode.Position(lineEnd, 9999);
+								const selectedRange = new vscode.Range(startPosition, endPosition);
+		
+								await vscode.window.showTextDocument(filePathUri, {
+									selection: selectedRange,
+									preserveFocus: true,
+								});
+							});
+		
+							resultsPick.onDidChangeSelection(async (selectedItems) => {
+								const selectedItem = selectedItems[0];
+								let selectedIndex = resultsPick.items.findIndex(
+									(result) => result.label === selectedItem.label
+									&& result.description === selectedItem.description
+									&& result.detail === selectedItem.detail
+								);
+		
+								const isAnswerBoxSelected = selectedIndex < answerBoxLineCount;
+								if (isAnswerBoxSelected) {
+									axios.put(MINT_SEARCH_FEEDBACK, {
+										authToken,
+										objectID,
+										isAnswerBoxSelected
+									});
+		
+									const { useful, notEnoughInfo, incorrect } = ANSWER_BOX_FEEDBACK.selections;
+									vscode.window.showInformationMessage(ANSWER_BOX_FEEDBACK.label, useful.text, notEnoughInfo.text, incorrect.text)
+										.then(async (selection) => {
+											let answerBoxFeedbackScore;
+											switch (selection) {
+												case useful.text:
+													answerBoxFeedbackScore = useful.score;
+													break;
+												case notEnoughInfo.text:
+													answerBoxFeedbackScore = notEnoughInfo.score;
+													break;
+												case incorrect.text:
+													answerBoxFeedbackScore = incorrect.score;
+													break;
+												default:
+													break;
+											}
+		
+											try {
+												await axios.put(MINT_SEARCH_ANSWER_BOX_FEEDBACK, {
+													authToken,
+													objectID,
+													score: answerBoxFeedbackScore
+												});
+			
+												vscode.window.showInformationMessage('Your feedback has been submitted');
+											} catch {
+												vscode.window.showErrorMessage('An error has occurred while submitting feedback');
+											}
+										});
+									
+									resultsPick.hide();
+									return;
 								}
-							}
-						});
-						resultsPick.onDidHide(async () => {
-							removePickerColorScheme();
-							if (shouldAskForFeedback) {
-								const answer = await vscode.window.showInformationMessage('Are you happy with Mint Search?', '👍 Yes', '🙅‍♂️ No');
-								let isHappy;
-								switch (answer) {
-									case '👍 Yes':
-										isHappy = true;
-										break;
-									case '🙅‍♂️ No':
-										isHappy = false;
-										break;
-									default:
-										break;
+		
+								if (answerBoxLineCount > 0) {
+									selectedIndex -= answerBoxLineCount;
 								}
-	
-								if (isHappy != null) {
-									try {
-										const feedbackResponse = await axios.post(MINT_IS_USER_HAPPY, { authToken, isHappy });
-										vscode.window.showInformationMessage(feedbackResponse.data.message);
-									} catch {
-										vscode.window.showErrorMessage('Error submitting feedback');
+		
+								const selectedResult = searchResultsWithSpacesId[selectedIndex];
+		
+								const { path, lineStart, lineEnd } = selectedResult;
+								const filePathUri = vscode.Uri.parse(path);
+								const startPosition = new vscode.Position(lineStart, 0);
+								const endPosition = new vscode.Position(lineEnd, 9999);
+								const selectedRange = new vscode.Range(startPosition, endPosition);
+								await vscode.window.showTextDocument(filePathUri, {
+									selection: selectedRange,
+								});
+		
+								try {
+									axios.put(MINT_SEARCH_FEEDBACK, {
+										authToken,
+										objectID,
+										engagedIndex: selectedIndex,
+									});
+								}
+								catch (error: any) {
+									const backendError = error?.response?.data;
+									if (backendError) {
+										const { shouldPromptWaitlist } = backendError;
+										showErrorMessage(backendError.error,
+											shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
+											shouldPromptWaitlist && LOGOUT_BUTTON
+										);
 									}
 								}
-							}
-						});
-						resultsPick.onDidChangeActive(async (activeItems) => {
-							const item = activeItems[0];
-							const itemContext = searchResultsWithSpacesId.find(
-								(searchResult) => searchResult.content === item.description && searchResult.filename === item.detail
-							);
-	
-							if (!itemContext) {return null;}
-	
-							const { path, lineStart, lineEnd } = itemContext;
-							const filePathUri = vscode.Uri.parse(path);
-							const startPosition = new vscode.Position(lineStart, 0);
-							const endPosition = new vscode.Position(lineEnd, 9999);
-							const selectedRange = new vscode.Range(startPosition, endPosition);
-	
-							await vscode.window.showTextDocument(filePathUri, {
-								selection: selectedRange,
-								preserveFocus: true,
 							});
-						});
-					} else {
-						resultItems = [
-							{
-								label: '📢',
-								description: 'The languages in your codebase are not supported.',
-								alwaysShow: true,
-							}
-						];
-					}
-					resultsPick.items = resultItems;
-					resultsPick.title = "Mint Search Results";
-					resultsPick.placeholder = search;
-					resultsPick.matchOnDescription = true;
-					resultsPick.matchOnDetail = true;
-					resultsPick.show();
-					
-					vscode.commands.executeCommand('mintlify.refreshHistory');
+		
+							resultsPick.onDidHide(async () => {
+								removePickerColorScheme();
+								if (shouldAskForFeedback) {
+									const answer = await vscode.window.showInformationMessage('Are you happy with Mint Search?', '👍 Yes', '🙅‍♂️ No');
+									let isHappy;
+									switch (answer) {
+										case '👍 Yes':
+											isHappy = true;
+											break;
+										case '🙅‍♂️ No':
+											isHappy = false;
+											break;
+										default:
+											break;
+									}
+		
+									if (isHappy != null) {
+										try {
+											const feedbackResponse = await axios.post(MINT_IS_USER_HAPPY, { authToken, isHappy });
+											vscode.window.showInformationMessage(feedbackResponse.data.message);
+										} catch {
+											vscode.window.showErrorMessage('Error submitting feedback');
+										}
+									}
+								}
+							});
+							vscode.commands.executeCommand('mintlify.refreshHistory');
+		
+							resolve('Completed search');
+						};
+					};
 
-					resolve('Completed search');
-					
+					waitForPreprocessing();
 				} catch (error: any) {
 					reject('Failed');
+					console.log(error);
 					const backendError = error?.response?.data;
 					if (backendError) {
 						const { shouldPromptWaitlist } = backendError;
