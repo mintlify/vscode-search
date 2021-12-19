@@ -61,6 +61,11 @@ export const showStatusBarItem = () => {
 	);
 	mintlifyButton.text = '$(search-save) Mintlify';
 	mintlifyButton.tooltip = 'Open Mintlify Settings';
+
+	if (process.env.NODE_ENV === 'development') {
+		mintlifyButton.text += ' (dev)';
+	}
+
 	mintlifyButton.command = 'mintlify.settings';
 	mintlifyButton.show();
 };
