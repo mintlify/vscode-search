@@ -3,6 +3,7 @@ import { hasMagic } from 'glob';
 import * as minimatch from 'minimatch';
 import { File, TraversedFileData } from '../constants/types';
 import { MINT_SEARCH_PREPROCESS } from '../constants/api';
+import { showSkippedFileTypesMessage } from './ui';
 import axios from 'axios';
 
 export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'java', 'md', 'env'];
@@ -185,7 +186,7 @@ const isValidFiletype = (fileExtension: string): boolean => {
 	return fileExtension != null && SUPPORTED_FILE_EXTENSIONS.includes(fileExtension);
 };
 
-export const getFiles = async (currentActivePath?: string): Promise<TraversedFileData> => {
+export const getTraversedFileData = async (currentActivePath?: string): Promise<TraversedFileData> => {
 	const root = vscode.workspace.workspaceFolders![0].uri;
 	const gitIgnore = await getGitIgnore(root);
 	const traversedFileData : TraversedFileData = await traverseFiles(root, [], currentActivePath, gitIgnore);
@@ -193,7 +194,8 @@ export const getFiles = async (currentActivePath?: string): Promise<TraversedFil
 };
 
 export const preprocess = async (authToken: string | null, callback: () => void) => {
-  const files = await getFiles(vscode.window.activeTextEditor?.document.uri.path);
+  const { files, skippedFileTypes } = await getTraversedFileData(vscode.window.activeTextEditor?.document.uri.path);
+  showSkippedFileTypesMessage(skippedFileTypes);
   const root = getRootPath();
 
   await axios.post(MINT_SEARCH_PREPROCESS, {
