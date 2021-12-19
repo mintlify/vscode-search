@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import { hasMagic } from 'glob';
 import * as minimatch from 'minimatch';
+import axios from 'axios';
 import { File } from '../constants/types';
 import { MINT_SEARCH_PREPROCESS } from '../constants/api';
-import axios from 'axios';
 
 export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'java', 'md', 'env'];
 
@@ -186,11 +186,13 @@ export const preprocess = async (authToken: string | null, callback: () => void)
   const files = await getFiles(vscode.window.activeTextEditor?.document.uri.path);
   const root = getRootPath();
 
-  await axios.post(MINT_SEARCH_PREPROCESS, {
-    authToken,
-    files,
-    root,
-  });
-
-  callback();
+	try {
+		await axios.post(MINT_SEARCH_PREPROCESS, {
+			authToken,
+			files,
+			root,
+		});
+	} finally {
+		callback();
+	}
 };
