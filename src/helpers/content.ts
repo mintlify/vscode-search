@@ -7,7 +7,16 @@ import axios from 'axios';
 
 export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'java', 'md', 'env'];
 // specifically for the error message
-const FILE_EXTENSIONS_TO_IGNORE = ['gitignore', 'txt', 'png', 'gif', 'mp4', 'jpg', 'jpeg', 'svg', 'mp3', 'editorconfig', 'development', 'production', 'staging', 'eslintignore', 'firebaserc', 'gitattributes'];
+const UNSUPPORTED_FILE_EXTENSIONS = [
+	'cpp', 'c++', 'cc', 'cp', 'cxx', 'h', 'h++', 'hh', 'hpp', 'hxx', 'inc', 'inl', 'ipp', 'tcc','tpp', // C++
+	'cs', 'cake', 'cshtml', 'csx', // C#
+	'r', 'rd', 'rsx', // R
+	'rb', 'ruby', // Ruby
+	'rs', // Rust
+	'ml', 'eliom', 'eliomi', 'ml4', 'mli', 'mll', 'mly', // OCaml
+	'go', 'swift', 'php',
+	'rlib', 'kt', 'kts', 'ktm', 'hs', 'plx', 'pl', 'pm', 'erl', 'hrl'
+];
 
 export const getRootPath = (): string => {
 	const workspaceRoot = vscode.workspace?.workspaceFolders![0];
@@ -50,7 +59,7 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActi
 
 				filesContent.push(readFileContent);
 			} else {
-				if (!FILE_EXTENSIONS_TO_IGNORE.includes(fileExtension) && fileExtension !== null) {
+				if (UNSUPPORTED_FILE_EXTENSIONS.includes(fileExtension) && fileExtension !== null) {
 					skippedFileTypes.add(fileExtension);
 				}
 			}
