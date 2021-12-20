@@ -199,7 +199,7 @@ export function activate(context: vscode.ExtensionContext) {
 							resultsCount = resultItems.length;
 						} else if (resultItems.length === 0) {
 							resultsCount = 0;
-							if (skippedFileTypes !== null && skippedFileTypes.size > 0) {
+							if (skippedFileTypes != null && skippedFileTypes.size > 0) {
 								resultItems = [
 									{
 										label: '📢',
@@ -217,7 +217,7 @@ export function activate(context: vscode.ExtensionContext) {
 								];
 							}
 						} else if (resultItems.length > 0) {
-							if (skippedFileTypes !== null && skippedFileTypes.size > 0) {
+							if (skippedFileTypes != null && skippedFileTypes.size > 0) {
 								showSkippedFileTypesMessage(skippedFileTypes);
 							}
 						}
