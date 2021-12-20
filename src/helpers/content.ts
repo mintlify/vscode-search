@@ -6,6 +6,8 @@ import { MINT_SEARCH_PREPROCESS } from '../constants/api';
 import axios from 'axios';
 
 export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'java', 'md', 'env'];
+// specifically for the error message
+const FILE_EXTENSIONS_TO_IGNORE = ['gitignore', 'txt', 'png', 'gif', 'mp4', 'jpg', 'jpeg', 'svg', 'mp3', 'editorconfig', 'development', 'production', 'staging', 'eslintignore', 'firebaserc', 'gitattributes'];
 
 export const getRootPath = (): string => {
 	const workspaceRoot = vscode.workspace?.workspaceFolders![0];
@@ -48,8 +50,7 @@ const traverseFiles = async (root: vscode.Uri, filesContent: File[], currentActi
 
 				filesContent.push(readFileContent);
 			} else {
-				const typesToIgnore = ['gitignore', 'txt', 'undefined'];
-				if (!typesToIgnore.includes(fileExtension)) {
+				if (!FILE_EXTENSIONS_TO_IGNORE.includes(fileExtension) && fileExtension !== null) {
 					skippedFileTypes.add(fileExtension);
 				}
 			}

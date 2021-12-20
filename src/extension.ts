@@ -132,6 +132,7 @@ export function activate(context: vscode.ExtensionContext) {
 		},
 		() => {
 			return new Promise(async (resolve, reject) => {
+				let resultsCount = 0;
 				const waitForPreprocessing = async (timeElapsed = 0) => {
 					if (timeElapsed > 10000) {
 						vscode.window.showErrorMessage('Unable to process files for search');
@@ -195,11 +196,10 @@ export function activate(context: vscode.ExtensionContext) {
 								};
 							});
 							resultItems = [...itemsByLine, ...resultItems];
-							if (skippedFileTypes.size > 0) {
-								showSkippedFileTypesMessage(skippedFileTypes);
-							}
+							resultsCount = resultItems.length;
 						} else if (resultItems.length === 0) {
-							if (skippedFileTypes.size > 0) {
+							resultsCount = 0;
+							if (skippedFileTypes !== null && skippedFileTypes.size > 0) {
 								resultItems = [
 									{
 										label: '📢',
@@ -216,13 +216,16 @@ export function activate(context: vscode.ExtensionContext) {
 									}
 								];
 							}
+						} else if (resultItems.length > 0) {
+							if (skippedFileTypes !== null && skippedFileTypes.size > 0) {
+								showSkippedFileTypesMessage(skippedFileTypes);
+							}
 						}
 	
 						const resultsPick = vscode.window.createQuickPick();
 						resultsPick.items = resultItems;
 						resultsPick.title = "Mint Search Results";
 						resultsPick.placeholder = search;
-						const resultsCount = resultItems.length;
 						if (resultsCount > 0) {
 							resultsPick.placeholder += ` - ${resultsCount} results`;
 						}
