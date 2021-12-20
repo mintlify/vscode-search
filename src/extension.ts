@@ -6,7 +6,8 @@ import { showErrorMessage,
 	configUserSettings,
 	refreshHistoryTree,
 	changePickerColorScheme,
-	removePickerColorScheme } from './helpers/ui';
+	removePickerColorScheme,
+	showSkippedFileTypesMessage } from './helpers/ui';
 import { getRootPath } from './helpers/content';
 import { MINT_SEARCH_DESCRIPTION,
 	REQUEST_ACCESS_BUTTON,
@@ -15,7 +16,7 @@ import { getLogoutURI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK,
 	MINT_SEARCH_ANSWER_BOX_FEEDBACK, MINT_IS_USER_HAPPY } from './constants/api';
 import HistoryProviderProvider from './history/HistoryTree';
-import { LocalStorageService, SearchResult } from './constants/types';
+import { LocalStorageService, SearchResult, TraversedFileData } from './constants/types';
 import { preprocess } from './helpers/content';
 import { initializeAuth } from './url';
 
@@ -44,7 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
 		
 		const authToken = storageManager.getValue('authToken');
 		isPreprocessing = true;
-		preprocess(authToken, () => {
+		const skippedFileTypes = await preprocess(authToken, () => {
 			isPreprocessing = false;
 		});
 		searchPick.onDidChangeValue(async (value: string) => {
@@ -97,7 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 
 			searchPick.value = search;
-			vscode.commands.executeCommand('mintlify.search', { search, onGetResults: () => {
+			vscode.commands.executeCommand('mintlify.search', { search, skippedFileTypes, onGetResults: () => {
 				isGettingResults = true;
 				searchPick.hide();
 			}});
@@ -119,7 +120,7 @@ export function activate(context: vscode.ExtensionContext) {
 	};
 
 	const searchCommand = vscode.commands.registerCommand('mintlify.search', async (
-		{ search, onGetResults = () => {} }
+		{ search, skippedFileTypes, onGetResults = () => {} }
 	) => {
 		changePickerColorScheme();
 		const root = getRootPath();
@@ -131,6 +132,7 @@ export function activate(context: vscode.ExtensionContext) {
 		},
 		() => {
 			return new Promise(async (resolve, reject) => {
+				let resultsCount = 0;
 				const waitForPreprocessing = async (timeElapsed = 0) => {
 					if (timeElapsed > 10000) {
 						vscode.window.showErrorMessage('Unable to process files for search');
@@ -194,21 +196,36 @@ export function activate(context: vscode.ExtensionContext) {
 								};
 							});
 							resultItems = [...itemsByLine, ...resultItems];
+							resultsCount = resultItems.length;
 						} else if (resultItems.length === 0) {
-							resultItems = [
-								{
-									label: '📭',
-									description: 'No results found. Try broadening your search',
-									alwaysShow: true,
-								}
-							];
+							resultsCount = 0;
+							if (skippedFileTypes !== null && skippedFileTypes.size > 0) {
+								resultItems = [
+									{
+										label: '📢',
+										description: 'The languages in your codebase are not supported.',
+										alwaysShow: true,
+									}
+								];
+							} else {
+								resultItems = [
+									{
+										label: '📭',
+										description: 'No results found. Try broadening your search',
+										alwaysShow: true,
+									}
+								];
+							}
+						} else if (resultItems.length > 0) {
+							if (skippedFileTypes !== null && skippedFileTypes.size > 0) {
+								showSkippedFileTypesMessage(skippedFileTypes);
+							}
 						}
 	
 						const resultsPick = vscode.window.createQuickPick();
 						resultsPick.items = resultItems;
 						resultsPick.title = "Mint Search Results";
 						resultsPick.placeholder = search;
-						const resultsCount = resultItems.length;
 						if (resultsCount > 0) {
 							resultsPick.placeholder += ` - ${resultsCount} results`;
 						}

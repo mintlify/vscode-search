@@ -26,3 +26,8 @@ export type File = {
 	content: string;
 	isCurrentActiveFile?: boolean;
 };
+
+export type TraversedFileData = {
+	files: File[];
+	skippedFileTypes: Set<string>;
+};

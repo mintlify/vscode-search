@@ -112,3 +112,14 @@ export const removePickerColorScheme = () => {
 export const refreshHistoryTree = () => {
 	vscode.commands.executeCommand('mintlify.refreshHistory');
 };
+
+export const showSkippedFileTypesMessage = (skippedFileTypes: Set<string>) => {
+	let skippedFileTypesStr = '';
+  skippedFileTypes.forEach(function(elem){
+  if (elem !== null) {
+			skippedFileTypesStr += '.' + elem + ', ';
+		}
+  });
+	skippedFileTypesStr = skippedFileTypesStr.slice(0, -2);
+  vscode.window.showInformationMessage(`Files of type ${skippedFileTypesStr} are not being searched because the language is not supported.`);
+};
