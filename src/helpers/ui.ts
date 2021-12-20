@@ -121,5 +121,5 @@ export const showSkippedFileTypesMessage = (skippedFileTypes: Set<string>) => {
 		}
   });
 	skippedFileTypesStr = skippedFileTypesStr.slice(0, -2);
-  vscode.window.showWarningMessage(`Files of type ${skippedFileTypesStr} are not being searched because the language is not supported.`);
+  vscode.window.showInformationMessage(`Files of type ${skippedFileTypesStr} are not being searched because the language is not supported.`);
 };

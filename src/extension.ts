@@ -6,7 +6,8 @@ import { showErrorMessage,
 	configUserSettings,
 	refreshHistoryTree,
 	changePickerColorScheme,
-	removePickerColorScheme } from './helpers/ui';
+	removePickerColorScheme,
+	showSkippedFileTypesMessage } from './helpers/ui';
 import { getRootPath } from './helpers/content';
 import { MINT_SEARCH_DESCRIPTION,
 	REQUEST_ACCESS_BUTTON,
@@ -44,7 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
 		
 		const authToken = storageManager.getValue('authToken');
 		isPreprocessing = true;
-		preprocess(authToken, () => {
+		const skippedFileTypes = await preprocess(authToken, () => {
 			isPreprocessing = false;
 		});
 		searchPick.onDidChangeValue(async (value: string) => {
@@ -97,7 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 
 			searchPick.value = search;
-			vscode.commands.executeCommand('mintlify.search', { search, onGetResults: () => {
+			vscode.commands.executeCommand('mintlify.search', { search, skippedFileTypes, onGetResults: () => {
 				isGettingResults = true;
 				searchPick.hide();
 			}});
@@ -119,7 +120,7 @@ export function activate(context: vscode.ExtensionContext) {
 	};
 
 	const searchCommand = vscode.commands.registerCommand('mintlify.search', async (
-		{ search, onGetResults = () => {} }
+		{ search, skippedFileTypes, onGetResults = () => {} }
 	) => {
 		changePickerColorScheme();
 		const root = getRootPath();
@@ -194,14 +195,27 @@ export function activate(context: vscode.ExtensionContext) {
 								};
 							});
 							resultItems = [...itemsByLine, ...resultItems];
+							if (skippedFileTypes.size > 0) {
+								showSkippedFileTypesMessage(skippedFileTypes);
+							}
 						} else if (resultItems.length === 0) {
-							resultItems = [
-								{
-									label: '📭',
-									description: 'No results found. Try broadening your search',
-									alwaysShow: true,
-								}
-							];
+							if (skippedFileTypes.size > 0) {
+								resultItems = [
+									{
+										label: '📢',
+										description: 'The languages in your codebase are not supported.',
+										alwaysShow: true,
+									}
+								];
+							} else {
+								resultItems = [
+									{
+										label: '📭',
+										description: 'No results found. Try broadening your search',
+										alwaysShow: true,
+									}
+								];
+							}
 						}
 	
 						const resultsPick = vscode.window.createQuickPick();
