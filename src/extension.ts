@@ -85,7 +85,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 			return searchPick.items = itemResults;
 		});
-
+		
+		let isGettingResults = false;
 		searchPick.onDidChangeSelection(async (selectedItems) => {
 			const selected = selectedItems[0];
 
@@ -100,12 +101,15 @@ export function activate(context: vscode.ExtensionContext) {
 
 			searchPick.value = search;
 			vscode.commands.executeCommand('mintlify.search', { search, skippedFileTypes, onGetResults: () => {
+				isGettingResults = true;
 				searchPick.hide();
 			}});
 		});
 
 		searchPick.onDidHide(() => {
-			removePickerColorScheme();
+			if (!isGettingResults) {
+				removePickerColorScheme();
+			}
 		});
 	});
 
