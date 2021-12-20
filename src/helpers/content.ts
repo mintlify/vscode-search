@@ -202,7 +202,7 @@ export const getTraversedFileData = async (currentActivePath?: string): Promise<
 	return traversedFileData;
 };
 
-export const preprocess = async (authToken: string | null, callback: () => void): Promise<Set<string>> => {
+export const preprocess = async (authToken: string | null, callback: (skippedFiles: Set<string>) => void) => {
   const { files, skippedFileTypes } = await getTraversedFileData(vscode.window.activeTextEditor?.document.uri.path);
   const root = getRootPath();
 
@@ -213,7 +213,6 @@ export const preprocess = async (authToken: string | null, callback: () => void)
 			root,
 		});
 	} finally {
-		callback();
-		return skippedFileTypes;
+		callback(skippedFileTypes);
 	}
 };

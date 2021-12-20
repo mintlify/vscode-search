@@ -45,8 +45,10 @@ export function activate(context: vscode.ExtensionContext) {
 		
 		const authToken = storageManager.getValue('authToken');
 		isPreprocessing = true;
-		const skippedFileTypes = await preprocess(authToken, () => {
+		let skippedFileTypes: Set<string>;
+		preprocess(authToken, (skippedFiles) => {
 			isPreprocessing = false;
+			skippedFileTypes = skippedFiles;
 		});
 		searchPick.onDidChangeValue(async (value: string) => {
 			if (!value) {
@@ -84,7 +86,6 @@ export function activate(context: vscode.ExtensionContext) {
 			return searchPick.items = itemResults;
 		});
 
-		let isGettingResults = false;
 		searchPick.onDidChangeSelection(async (selectedItems) => {
 			const selected = selectedItems[0];
 
@@ -99,15 +100,12 @@ export function activate(context: vscode.ExtensionContext) {
 
 			searchPick.value = search;
 			vscode.commands.executeCommand('mintlify.search', { search, skippedFileTypes, onGetResults: () => {
-				isGettingResults = true;
 				searchPick.hide();
 			}});
 		});
 
 		searchPick.onDidHide(() => {
-			if (!isGettingResults) {
-				removePickerColorScheme();
-			}
+			removePickerColorScheme();
 		});
 	});
 
