@@ -198,11 +198,13 @@ export const preprocess = async (authToken: string | null, callback: () => void)
   showSkippedFileTypesMessage(skippedFileTypes);
   const root = getRootPath();
 
-  await axios.post(MINT_SEARCH_PREPROCESS, {
-    authToken,
-    files,
-    root,
-  });
-
-  callback();
+	try {
+		await axios.post(MINT_SEARCH_PREPROCESS, {
+			authToken,
+			files,
+			root,
+		});
+	} finally {
+		callback();
+	}
 };

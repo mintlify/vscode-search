@@ -61,6 +61,11 @@ export const showStatusBarItem = () => {
 	);
 	mintlifyButton.text = '$(search-save) Mintlify';
 	mintlifyButton.tooltip = 'Open Mintlify Settings';
+
+	if (process.env.NODE_ENV === 'development') {
+		mintlifyButton.text += ' (dev)';
+	}
+
 	mintlifyButton.command = 'mintlify.settings';
 	mintlifyButton.show();
 };
@@ -78,19 +83,20 @@ export const changePickerColorScheme = () => {
 	const currentColorScheme = workbenchConfig.get('colorCustomizations') as any;
 	const mintlifyColorScheme = {
 		"[*Dark*]": {
-      "quickInput.background": "#2E3D38",
+      "quickInput.background": "#303030",
       "quickInput.foreground": "#FFF",
-      "quickInputList.focusBackground": "#0C8C5E80",
-      "list.highlightForeground": "#18E299A1",
-      "focusBorder": "#18E29945",
-			"progressBar.background": "#0C8C5E"
+      "quickInputList.focusBackground": "#0D936B1A",
+      "list.highlightForeground": "#18E299",
+      "focusBorder": "#0D9373",
+      "progressBar.background": "#0D9373"
     },
     "[*Light*]": {
-      "quickInputList.focusBackground": "#0C8C5E",
-      "list.highlightForeground": "#1B4637",
-      "list.focusHighlightForeground": "#E8FEF6",
-      "focusBorder": "#0C8C5E",
-			"progressBar.background": "#0C8C5E"
+      "quickInputList.focusBackground": "#0D9373",
+      "list.highlightForeground": "#0D9373",
+			"quickInputList.focusForeground": "#F1FFFA",
+      "list.focusHighlightForeground": "#F1FFFA",
+      "focusBorder": "#0D9373",
+			"progressBar.background": "#0D9373"
     }
 	};
 	workbenchConfig.update('colorCustomizations', {...currentColorScheme, ...mintlifyColorScheme}, true);
