@@ -21,7 +21,7 @@ const clientId = isDevMode ? 'Rsc8PmIdW9MqtcaJqMqWpJfYWAiMuyrV' : 'MOMiBZylQGPE0
 const scope = 'openid profile email offline_access';
 
 export const getLoginURI = (uriScheme: string) => {
-  const redirectURI = `${uriScheme}://mintlify.search/auth`;
+  const redirectURI = `https://mintlify.com/start/${uriScheme}`;
   return `${auth0URI}/authorize?response_type=${responseType}&client_id=${clientId}&redirect_uri=${redirectURI}&scope=${scope}`;
 };
 

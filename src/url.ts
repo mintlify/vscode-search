@@ -14,14 +14,13 @@ export const initializeAuth = (storageManager: LocalStorageService) => {
         const code = query.get('code');
         const uriScheme = vscode.env.uriScheme;
         try {
-          const authResponse = await axios.post(MINT_USER_CODE, { code, uriScheme });
+          const authResponse = await axios.post(MINT_USER_CODE, { code, uriScheme, isNewURI: true });
           const { authToken, email } = authResponse.data;
           storageManager.setValue('authToken', authToken);
           refreshHistoryTree();
   
           showInformationMessage(`Logged in to Mintlify as ${email}`);
         } catch (err) {
-          console.log(err);
           vscode.window.showErrorMessage('Error authenticating user');
         }
       } else if (uri.path === '/logout') {
