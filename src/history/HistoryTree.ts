@@ -23,10 +23,9 @@ export default class HistoryProvider implements vscode.TreeDataProvider<SearchHi
     if (element) {
       return Promise.resolve([]);
     } else {
-      const root = getRootPath();
       const { data: { history } } = await axios.post(MINT_SEARCH_HISTORY, {
         authToken: this.authToken,
-        root,
+        root: getRootPath(true),
       });
       const searchHistory = history.map((search: { query: string, timestamp: string }) => {
         const relativeTime = timeAgo.format(Date.parse(search.timestamp), 'round') as string;

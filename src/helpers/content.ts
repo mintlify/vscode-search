@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { hasMagic } from 'glob';
+import { SHA3 } from 'crypto-js';
 import * as minimatch from 'minimatch';
 import { File, TraversedFileData } from '../constants/types';
 import { MINT_SEARCH_PREPROCESS } from '../constants/api';
@@ -18,9 +19,16 @@ const UNSUPPORTED_FILE_EXTENSIONS = [
 	'rlib', 'kt', 'kts', 'ktm', 'hs', 'plx', 'pl', 'pm', 'erl', 'hrl'
 ];
 
-export const getRootPath = (): string => {
+export const getRootPath = (encrypt = false): string => {
 	const workspaceRoot = vscode.workspace?.workspaceFolders![0];
-	return workspaceRoot?.uri?.path;
+	const path = workspaceRoot?.uri?.path;
+
+	if (encrypt && path != null) {
+		const encyptedRoot = SHA3(path).toString();
+		return encyptedRoot;
+	}
+
+	return path;
 };
 
 const U18ARRAY_TO_MB = 1_048_576;
@@ -204,13 +212,12 @@ export const getTraversedFileData = async (currentActivePath?: string): Promise<
 
 export const preprocess = async (authToken: string | null, callback: (skippedFiles: Set<string>) => void) => {
   const { files, skippedFileTypes } = await getTraversedFileData(vscode.window.activeTextEditor?.document.uri.path);
-  const root = getRootPath();
 
 	try {
 		await axios.post(MINT_SEARCH_PREPROCESS, {
 			authToken,
 			files,
-			root,
+			root: getRootPath(true),
 		});
 	} finally {
 		callback(skippedFileTypes);

@@ -16,7 +16,7 @@ import { getLogoutURI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK,
 	MINT_SEARCH_ANSWER_BOX_FEEDBACK, MINT_IS_USER_HAPPY } from './constants/api';
 import HistoryProviderProvider from './history/HistoryTree';
-import { LocalStorageService, SearchResult, TraversedFileData } from './constants/types';
+import { LocalStorageService, SearchResult } from './constants/types';
 import { preprocess } from './helpers/content';
 import { initializeAuth } from './url';
 
@@ -66,7 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
 			if (authToken) {
 				const { data: autoCompleteData }: {data: string[]} = await axios.post(MINT_SEARCH_AUTOCOMPLETE, {
 					query: value,
-					root: getRootPath(),
+					root: getRootPath(true),
 					authToken,
 				});
 
@@ -125,7 +125,6 @@ export function activate(context: vscode.ExtensionContext) {
 		{ search, skippedFileTypes, onGetResults = () => {} }
 	) => {
 		changePickerColorScheme();
-		const root = getRootPath();
 		const authToken = storageManager.getValue('authToken');
 
 		vscode.window.withProgress({
@@ -148,7 +147,7 @@ export function activate(context: vscode.ExtensionContext) {
 						try {
 						const searchRes: { data: ResponseResults } = await axios.post(MINT_SEARCH_RESULTS, {
 							search,
-							root,
+							root: getRootPath(true),
 							authToken
 						}, {
 							maxContentLength: Infinity,
