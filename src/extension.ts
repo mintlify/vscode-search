@@ -223,7 +223,7 @@ export function activate(context: vscode.ExtensionContext) {
 	
 						const resultsPick = vscode.window.createQuickPick();
 						resultsPick.items = resultItems;
-						resultsPick.title = "Mint Search Results";
+						resultsPick.title = "Results (▲▼ Keys to Preview)";
 						resultsPick.placeholder = search;
 						if (resultsCount > 0) {
 							resultsPick.placeholder += ` - ${resultsCount} results`;
