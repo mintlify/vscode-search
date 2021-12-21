@@ -7,14 +7,15 @@ import { showErrorMessage,
 	refreshHistoryTree,
 	changePickerColorScheme,
 	removePickerColorScheme,
-	showSkippedFileTypesMessage } from './helpers/ui';
+	showSkippedFileTypesMessage,
+	askIfHappyUser } from './helpers/ui';
 import { getRootPath } from './helpers/content';
 import { MINT_SEARCH_DESCRIPTION,
 	REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './constants/content';
 import { getLogoutURI, MINT_SEARCH_AUTOCOMPLETE,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK,
-	MINT_SEARCH_ANSWER_BOX_FEEDBACK, MINT_IS_USER_HAPPY } from './constants/api';
+	MINT_SEARCH_ANSWER_BOX_FEEDBACK } from './constants/api';
 import HistoryProviderProvider from './history/HistoryTree';
 import { LocalStorageService, SearchResult } from './constants/types';
 import { preprocess } from './helpers/content';
@@ -89,15 +90,14 @@ export function activate(context: vscode.ExtensionContext) {
 		let isGettingResults = false;
 		searchPick.onDidChangeSelection(async (selectedItems) => {
 			const selected = selectedItems[0];
-
-			const { label: search } = selected;
-			if (!search) {
+			if (!selected?.label) {
 				return null;
 			}
-
 			if (!authToken) {
 				return showLoginMessage();
 			}
+
+			const { label: search } = selected;
 
 			searchPick.value = search;
 			vscode.commands.executeCommand('mintlify.search', { search, skippedFileTypes, onGetResults: () => {
@@ -177,7 +177,6 @@ export function activate(context: vscode.ExtensionContext) {
 							};
 						});
 	
-						let answerBoxLineCount = 0;
 						let resultItems: vscode.QuickPickItem[] = searchResultsWithSpacesId.map((result) => {
 							return {
 								label: '↦',
@@ -189,7 +188,6 @@ export function activate(context: vscode.ExtensionContext) {
 						// Inject answer to the front
 						if (answer) {
 							const answerByLine = answer.replace(/(?![^\n]{1,64}$)([^\n]{1,64})\s/g, '$1\n').split('\n');
-							answerBoxLineCount = answerByLine.length;
 							const itemsByLine =  answerByLine.map((line: string, i: number) => {
 								return {
 									label: i === 0 ? `$(lightbulb) ${line}` : line,
@@ -233,16 +231,19 @@ export function activate(context: vscode.ExtensionContext) {
 						resultsPick.matchOnDescription = true;
 						resultsPick.matchOnDetail = true;
 						resultsPick.show();
-	
+
+						let lastActiveIndex: number | null = null;	
+						
 						resultsPick.onDidChangeActive(async (activeItems) => {
-							const item = activeItems[0];
-							const itemContext = searchResultsWithSpacesId.find(
-								(searchResult) => searchResult.content === item.description && searchResult.filename === item.detail
+							const activeItem = activeItems[0];
+							const activeIndex = searchResultsWithSpacesId.findIndex(
+								(searchResult) => searchResult.content === activeItem.description && searchResult.filename === activeItem.detail
 							);
-	
-							if (!itemContext) {return null;}
-	
+
+							lastActiveIndex = activeIndex;
+							const itemContext = searchResultsWithSpacesId[activeIndex];
 							const { path, lineStart, lineEnd } = itemContext;
+
 							const filePathUri = vscode.Uri.parse(path);
 							const startPosition = new vscode.Position(lineStart, 0);
 							const endPosition = new vscode.Position(lineEnd, 9999);
@@ -254,15 +255,17 @@ export function activate(context: vscode.ExtensionContext) {
 							});
 						});
 	
-						resultsPick.onDidChangeSelection(async (selectedItems) => {
-							const selectedItem = selectedItems[0];
-							let selectedIndex = resultsPick.items.findIndex(
-								(result) => result.label === selectedItem.label
-								&& result.description === selectedItem.description
-								&& result.detail === selectedItem.detail
-							);
+						resultsPick.onDidChangeSelection(() => resultsPick.hide());
 	
-							const isAnswerBoxSelected = selectedIndex < answerBoxLineCount;
+						resultsPick.onDidHide(async (event) => {
+							removePickerColorScheme();
+
+							if (lastActiveIndex == null) {
+								// None selected
+								return;
+							}
+
+							const isAnswerBoxSelected = lastActiveIndex < 0;
 							if (isAnswerBoxSelected) {
 								axios.put(MINT_SEARCH_FEEDBACK, {
 									authToken,
@@ -287,6 +290,8 @@ export function activate(context: vscode.ExtensionContext) {
 											default:
 												break;
 										}
+
+										if (answerBoxFeedbackScore == null) {return;}
 	
 										try {
 											await axios.put(MINT_SEARCH_ANSWER_BOX_FEEDBACK, {
@@ -300,71 +305,28 @@ export function activate(context: vscode.ExtensionContext) {
 											vscode.window.showErrorMessage('An error has occurred while submitting feedback');
 										}
 									});
-								
-								resultsPick.hide();
-								return;
-							}
-	
-							if (answerBoxLineCount > 0) {
-								selectedIndex -= answerBoxLineCount;
-							}
-	
-							const selectedResult = searchResultsWithSpacesId[selectedIndex];
-	
-							const { path, lineStart, lineEnd } = selectedResult;
-							const filePathUri = vscode.Uri.parse(path);
-							const startPosition = new vscode.Position(lineStart, 0);
-							const endPosition = new vscode.Position(lineEnd, 9999);
-							const selectedRange = new vscode.Range(startPosition, endPosition);
-							await vscode.window.showTextDocument(filePathUri, {
-								selection: selectedRange,
-							});
-	
-							try {
-								axios.put(MINT_SEARCH_FEEDBACK, {
-									authToken,
-									objectID,
-									engagedIndex: selectedIndex,
-								});
-							}
-							catch (error: any) {
-								const backendError = error?.response?.data;
-								if (backendError) {
-									const { shouldPromptWaitlist } = backendError;
-									showErrorMessage(backendError.error,
-										shouldPromptWaitlist && REQUEST_ACCESS_BUTTON,
-										shouldPromptWaitlist && LOGOUT_BUTTON
-									);
+							} else {
+								try {
+									axios.put(MINT_SEARCH_FEEDBACK, {
+										authToken,
+										objectID,
+										engagedIndex: lastActiveIndex,
+									});
 								}
-							}
-						});
-	
-						resultsPick.onDidHide(async () => {
-							removePickerColorScheme();
-							if (shouldAskForFeedback) {
-								const answer = await vscode.window.showInformationMessage('Are you happy with Mint Search?', '👍 Yes', '🙅‍♂️ No');
-								let isHappy;
-								switch (answer) {
-									case '👍 Yes':
-										isHappy = true;
-										break;
-									case '🙅‍♂️ No':
-										isHappy = false;
-										break;
-									default:
-										break;
-								}
-	
-								if (isHappy != null) {
-									try {
-										const feedbackResponse = await axios.post(MINT_IS_USER_HAPPY, { authToken, isHappy });
-										vscode.window.showInformationMessage(feedbackResponse.data.message);
-									} catch {
-										vscode.window.showErrorMessage('Error submitting feedback');
+								catch (error: any) {
+									const backendError = error?.response?.data?.error;
+									if (backendError) {
+										showErrorMessage(backendError);
 									}
 								}
 							}
+							
+							if (shouldAskForFeedback && authToken) {
+								askIfHappyUser(authToken);
+							}
+							lastActiveIndex = null;
 						});
+
 						vscode.commands.executeCommand('mintlify.refreshHistory');
 	
 						resolve('Completed search');

@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { getLoginURI, REQUEST_ACCESS_URI } from '../constants/api';
+import axios from 'axios';
+import { getLoginURI, REQUEST_ACCESS_URI, MINT_IS_USER_HAPPY } from '../constants/api';
 import { REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, SIGN_IN_BUTTON } from '../constants/content';
 
@@ -122,4 +123,28 @@ export const showSkippedFileTypesMessage = (skippedFileTypes: Set<string>) => {
   });
 	skippedFileTypesStr = skippedFileTypesStr.slice(0, -2);
   vscode.window.showInformationMessage(`Files of type ${skippedFileTypesStr} are not being searched because the language is not supported.`);
+};
+
+export const askIfHappyUser = async (authToken: string) => {
+	const answer = await vscode.window.showInformationMessage('Are you happy with Mint Search?', '👍 Yes', '🙅‍♂️ No');
+	let isHappy;
+	switch (answer) {
+		case '👍 Yes':
+			isHappy = true;
+			break;
+		case '🙅‍♂️ No':
+			isHappy = false;
+			break;
+		default:
+			break;
+	}
+
+	if (isHappy == null) {return;}
+
+	try {
+		const feedbackResponse = await axios.post(MINT_IS_USER_HAPPY, { authToken, isHappy });
+		vscode.window.showInformationMessage(feedbackResponse.data.message);
+	} catch {
+		vscode.window.showErrorMessage('Error submitting feedback');
+	}
 };
