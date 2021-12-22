@@ -9,11 +9,11 @@ import { showErrorMessage,
 	removePickerColorScheme,
 	showSkippedFileTypesMessage,
 	askIfHappyUser } from './helpers/ui';
-import { getRootPath } from './helpers/content';
+import { getAutoSuggestionPickItems, getRootPath } from './helpers/content';
 import { MINT_SEARCH_DESCRIPTION,
 	REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './constants/content';
-import { getLogoutURI, MINT_SEARCH_AUTOCOMPLETE,
+import { getLogoutURI,
 	MINT_SEARCH_RESULTS, MINT_SEARCH_FEEDBACK,
 	MINT_SEARCH_ANSWER_BOX_FEEDBACK } from './constants/api';
 import HistoryProviderProvider from './history/HistoryTree';
@@ -39,11 +39,6 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const searchbar = vscode.commands.registerCommand('mintlify.searchbar', async () => {
 		changePickerColorScheme();
-		const searchPick = vscode.window.createQuickPick();
-		searchPick.title = "Mintlify";
-		searchPick.placeholder = "What would you like to find?";
-		searchPick.show();
-		
 		const authToken = storageManager.getValue('authToken');
 		isPreprocessing = true;
 		let skippedFileTypes: Set<string>;
@@ -51,44 +46,37 @@ export function activate(context: vscode.ExtensionContext) {
 			isPreprocessing = false;
 			skippedFileTypes = skippedFiles;
 		});
-		searchPick.onDidChangeValue(async (value: string) => {
-			if (!value) {
-				return searchPick.items = [];
-			}
 
+		const searchPick = vscode.window.createQuickPick();
+		searchPick.title = "Mintlify";
+		searchPick.placeholder = "What would you like to find?";
+		searchPick.show();
+		// Show default history
+		getAutoSuggestionPickItems(authToken, '')
+			.then((suggestedQueries) => {
+				searchPick.items = suggestedQueries;
+			});
+
+		searchPick.onDidChangeValue(async (value: string) => {
 			let itemResults: vscode.QuickPickItem[] = [];
-			itemResults = [
-				{label: value, description: MINT_SEARCH_DESCRIPTION },
-			];
+
+			if (!value) {
+				itemResults = [];
+			} else {
+				itemResults = [
+					{label: value, description: MINT_SEARCH_DESCRIPTION },
+				];
+			}
 
 			searchPick.items = itemResults;
 
-			if (authToken) {
-				const { data: autoSuggestions }: {data: string[]} = await axios.post(MINT_SEARCH_AUTOCOMPLETE, {
-					query: value,
-					root: getRootPath(true),
-					authToken,
-				});
+			const autoSuggestions = await getAutoSuggestionPickItems(authToken, value);
 
-				if (autoSuggestions == null) {
-					return;
-				}
-
-				const autoSuggestionResults = autoSuggestions
-					.filter((suggestion) => {
-						return suggestion !== value;
-					})
-					.map((suggestion) => {
-					return {
-						label: suggestion,
-						alwaysShow: true,
-					};
-				});
+			if (autoSuggestions.length > 0) {
 				itemResults = [
 					...itemResults,
-					...autoSuggestionResults
+					...autoSuggestions
 				];
-
 				return searchPick.items = itemResults;
 			}
 		});

@@ -3,7 +3,7 @@ import { hasMagic } from 'glob';
 import { SHA3 } from 'crypto-js';
 import * as minimatch from 'minimatch';
 import { File, TraversedFileData } from '../constants/types';
-import { MINT_SEARCH_PREPROCESS } from '../constants/api';
+import { MINT_SEARCH_AUTOCOMPLETE, MINT_SEARCH_PREPROCESS } from '../constants/api';
 import axios from 'axios';
 
 export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'java', 'md', 'env'];
@@ -222,4 +222,30 @@ export const preprocess = async (authToken: string | null, callback: (skippedFil
 	} finally {
 		callback(skippedFileTypes);
 	}
+};
+
+export const getAutoSuggestionPickItems = async (authToken: string | null, value: string): Promise<vscode.QuickPickItem[]> => {
+	if (authToken == null) {
+		return [];
+	}
+
+	const { data: autoSuggestions }: {data: string[]} = await axios.post(MINT_SEARCH_AUTOCOMPLETE, {
+		query: value,
+		root: getRootPath(true),
+		authToken,
+	});
+
+	if (autoSuggestions == null) {
+		return [];
+	}
+
+	const autoSuggestionResults = autoSuggestions
+		.map((suggestion) => {
+		return {
+			label: suggestion,
+			alwaysShow: true,
+		};
+	});
+
+	return autoSuggestionResults;
 };
