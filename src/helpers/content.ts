@@ -242,7 +242,7 @@ export const getAutoSuggestionPickItems = async (authToken: string | null, value
 	const autoSuggestionResults = autoSuggestions
 		.map((suggestion) => {
 		return {
-			label: suggestion,
+			label: `$(clock) ${suggestion}`,
 			alwaysShow: true,
 		};
 	});

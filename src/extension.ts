@@ -64,7 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
 				itemResults = [];
 			} else {
 				itemResults = [
-					{label: value, description: MINT_SEARCH_DESCRIPTION },
+					{label: `$(clock) ${value}`, description: MINT_SEARCH_DESCRIPTION },
 				];
 			}
 
@@ -91,7 +91,9 @@ export function activate(context: vscode.ExtensionContext) {
 				return showLoginMessage();
 			}
 
-			const { label: search } = selected;
+			const { label } = selected;
+
+			const search = label.replace(/^\$\(clock\)\s/, '');
 
 			searchPick.value = search;
 			vscode.commands.executeCommand('mintlify.search', { search, skippedFileTypes, onGetResults: () => {
