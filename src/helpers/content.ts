@@ -3,7 +3,7 @@ import { hasMagic } from 'glob';
 import { SHA3 } from 'crypto-js';
 import * as minimatch from 'minimatch';
 import { File, TraversedFileData } from '../constants/types';
-import { MINT_SEARCH_AUTOCOMPLETE, MINT_SEARCH_PREPROCESS } from '../constants/api';
+import { MINT_SEARCH_AUTOCOMPLETE_V2, MINT_SEARCH_PREPROCESS } from '../constants/api';
 import axios from 'axios';
 
 export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'java', 'md', 'env'];
@@ -224,12 +224,17 @@ export const preprocess = async (authToken: string | null, callback: (skippedFil
 	}
 };
 
+type Suggestion = {
+	type: 'history' | 'recommend',
+	query: string;
+};
+
 export const getAutoSuggestionPickItems = async (authToken: string | null, value: string): Promise<vscode.QuickPickItem[]> => {
 	if (authToken == null) {
 		return [];
 	}
 
-	const { data: autoSuggestions }: {data: string[]} = await axios.post(MINT_SEARCH_AUTOCOMPLETE, {
+	const { data: autoSuggestions }: {data: Suggestion[]} = await axios.post(MINT_SEARCH_AUTOCOMPLETE_V2, {
 		query: value,
 		root: getRootPath(true),
 		authToken,
@@ -241,11 +246,21 @@ export const getAutoSuggestionPickItems = async (authToken: string | null, value
 
 	const autoSuggestionResults = autoSuggestions
 		.map((suggestion) => {
+		const iconMap = {
+			history: '$(clock)',
+			recommend: '$(search)'
+		};
+
+		const icon = iconMap[suggestion.type];
 		return {
-			label: `$(clock) ${suggestion}`,
+			label: `${icon} ${suggestion.query}`,
 			alwaysShow: true,
 		};
 	});
 
 	return autoSuggestionResults;
+};
+
+export const removeIconFromLabel = (label: string): string => {
+	return label.replace(/^\$\((clock|search)\)\s/, '');
 };

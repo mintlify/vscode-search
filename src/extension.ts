@@ -9,7 +9,7 @@ import { showErrorMessage,
 	removePickerColorScheme,
 	showSkippedFileTypesMessage,
 	askIfHappyUser } from './helpers/ui';
-import { getAutoSuggestionPickItems, getRootPath } from './helpers/content';
+import { getAutoSuggestionPickItems, getRootPath, removeIconFromLabel } from './helpers/content';
 import { MINT_SEARCH_DESCRIPTION,
 	REQUEST_ACCESS_BUTTON,
 	LOGOUT_BUTTON, ANSWER_BOX_FEEDBACK } from './constants/content';
@@ -64,7 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
 				itemResults = [];
 			} else {
 				itemResults = [
-					{label: `$(clock) ${value}`, description: MINT_SEARCH_DESCRIPTION },
+					{label: value, description: MINT_SEARCH_DESCRIPTION },
 				];
 			}
 
@@ -93,7 +93,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 			const { label } = selected;
 
-			const search = label.replace(/^\$\(clock\)\s/, '');
+			const search = removeIconFromLabel(label);
 
 			searchPick.value = search;
 			vscode.commands.executeCommand('mintlify.search', { search, skippedFileTypes, onGetResults: () => {

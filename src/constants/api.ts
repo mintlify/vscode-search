@@ -4,6 +4,8 @@ const isDevMode = process.env.NODE_ENV === 'development';
 const MINTBASE = isDevMode ? 'http://localhost:5000' : 'https://api.mintlify.com';
 
 export const MINT_SEARCH_AUTOCOMPLETE = `${MINTBASE}/search/autocomplete`;
+export const MINT_SEARCH_AUTOCOMPLETE_V2 = `${MINTBASE}/search/autocomplete/v2`;
+
 export const MINT_SEARCH_RESULTS = `${MINTBASE}/search/results`;
 export const MINT_SEARCH_FEEDBACK = `${MINTBASE}/search/feedback`;
 export const MINT_SEARCH_ANSWER_BOX_FEEDBACK = `${MINTBASE}/search/feedback/answerbox`;
