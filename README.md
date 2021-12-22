@@ -1,6 +1,6 @@
 # 🌿 Mintlify Search - ⌘ + M
 
-![Version](https://img.shields.io/visual-studio-marketplace/v/mintlify.search) ![Size](https://img.shields.io/github/languages/code-size/mintlify/vscode) ![Ratings](https://img.shields.io/visual-studio-marketplace/r/mintlify.search)
+![Version](https://img.shields.io/visual-studio-marketplace/v/mintlify.search) ![Size](https://img.shields.io/github/languages/code-size/mintlify/vscode-search) ![Ratings](https://img.shields.io/visual-studio-marketplace/r/mintlify.search)
 
 Simple as ⌘ + F. Smart as Google. Get answers and discover functions in your organization's code.
 
