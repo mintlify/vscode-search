@@ -57,7 +57,6 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 
 			let itemResults: vscode.QuickPickItem[] = [];
-			let autoSuggestions: string[] = [];
 			itemResults = [
 				{label: value, description: MINT_SEARCH_DESCRIPTION },
 			];
@@ -65,26 +64,33 @@ export function activate(context: vscode.ExtensionContext) {
 			searchPick.items = itemResults;
 
 			if (authToken) {
-				const { data: autoCompleteData }: {data: string[]} = await axios.post(MINT_SEARCH_AUTOCOMPLETE, {
+				const { data: autoSuggestions }: {data: string[]} = await axios.post(MINT_SEARCH_AUTOCOMPLETE, {
 					query: value,
 					root: getRootPath(true),
 					authToken,
 				});
 
-				autoSuggestions = autoCompleteData;
-			}
-			const autoSuggestionResults = autoSuggestions.map((suggestion) => {
-				return {
-					label: suggestion,
-					alwaysShow: true,
-				};
-			});
-			itemResults = [
-				{label: value, description: MINT_SEARCH_DESCRIPTION },
-				...autoSuggestionResults
-			];
+				if (autoSuggestions == null) {
+					return;
+				}
 
-			return searchPick.items = itemResults;
+				const autoSuggestionResults = autoSuggestions
+					.filter((suggestion) => {
+						return suggestion !== value;
+					})
+					.map((suggestion) => {
+					return {
+						label: suggestion,
+						alwaysShow: true,
+					};
+				});
+				itemResults = [
+					...itemResults,
+					...autoSuggestionResults
+				];
+
+				return searchPick.items = itemResults;
+			}
 		});
 		
 		let isGettingResults = false;
