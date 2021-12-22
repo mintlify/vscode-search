@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import axios from 'axios';
 import { getLoginURI, REQUEST_ACCESS_URI, MINT_IS_USER_HAPPY } from '../constants/api';
 import { REQUEST_ACCESS_BUTTON,
-	LOGOUT_BUTTON, SIGN_IN_BUTTON } from '../constants/content';
+	LOGOUT_BUTTON, SIGN_IN_BUTTON, KEYBINDING } from '../constants/content';
 
 export const showLoginMessage = () => {
 	vscode.window.showInformationMessage('🌿 Sign in to use Mintlify search', SIGN_IN_BUTTON)
@@ -31,7 +31,7 @@ export const showErrorMessage = async (message: string, ...buttons: string[]) =>
 	}
 };
 
-const SEARCH_BUTTON = '🔎 Search (⌘ + M)';
+const SEARCH_BUTTON = `🔎 Search (${KEYBINDING})`;
 
 export const showSettings = async (isLoggedIn: boolean) => {
 	if (!isLoggedIn) {

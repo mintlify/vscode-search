@@ -1,9 +1,10 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
 import { URLSearchParams } from 'url';
-import { showInformationMessage, refreshHistoryTree, showLoginMessage } from './helpers/ui';
-import { MINT_USER_CODE } from './constants/api';
-import { LocalStorageService } from './constants/types';
+import { showInformationMessage, refreshHistoryTree, showLoginMessage } from './ui';
+import { KEYBINDING } from '../constants/content';
+import { MINT_USER_CODE } from '../constants/api';
+import { LocalStorageService } from '../constants/types';
 
 export const initializeAuth = (storageManager: LocalStorageService) => {
   vscode.window.registerUriHandler({
@@ -15,9 +16,14 @@ export const initializeAuth = (storageManager: LocalStorageService) => {
         const uriScheme = vscode.env.uriScheme;
         try {
           const authResponse = await axios.post(MINT_USER_CODE, { code, uriScheme, isNewURI: true });
-          const { authToken, email } = authResponse.data;
+          const { authToken, email, isFirstTime } = authResponse.data;
           storageManager.setValue('authToken', authToken);
           refreshHistoryTree();
+
+          if (isFirstTime) {
+            showInformationMessage(`🌿 Welcome to Mintlify! Hit ${KEYBINDING} to get started`);
+            return;
+          }
   
           showInformationMessage(`Logged in to Mintlify as ${email}`);
         } catch (err) {

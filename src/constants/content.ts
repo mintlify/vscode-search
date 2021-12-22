@@ -1,3 +1,5 @@
+import { platform } from 'os';
+
 export const SIGN_IN_BUTTON = 'Sign in';
 export const REQUEST_ACCESS_BUTTON = 'Request access';
 export const LOGOUT_BUTTON = 'Logout';
@@ -21,3 +23,6 @@ export const ANSWER_BOX_FEEDBACK = {
 };
 
 export const MINT_SEARCH_DESCRIPTION = '- Mint Search';
+
+const isMac = platform() === 'darwin';
+export const KEYBINDING = isMac ? '⌘ + M' : 'CMD + M';

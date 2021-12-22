@@ -11,7 +11,7 @@ export type SearchResult = {
 export class LocalStorageService {
   constructor(private storage: vscode.Memento) {}
 	
-  public getValue(key: string) {
+  public getValue(key: string): null {
     return this.storage.get(key, null);
   }
 

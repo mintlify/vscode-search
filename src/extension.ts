@@ -19,7 +19,7 @@ import { getLogoutURI, MINT_SEARCH_AUTOCOMPLETE,
 import HistoryProviderProvider from './history/HistoryTree';
 import { LocalStorageService, SearchResult } from './constants/types';
 import { preprocess } from './helpers/content';
-import { initializeAuth } from './url';
+import { initializeAuth } from './helpers/url';
 
 export function activate(context: vscode.ExtensionContext) {
 	// Set storage manager for auth tokens
