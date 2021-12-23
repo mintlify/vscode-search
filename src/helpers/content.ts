@@ -6,14 +6,13 @@ import { File, TraversedFileData } from '../constants/types';
 import { MINT_SEARCH_AUTOCOMPLETE_V2, MINT_SEARCH_PREPROCESS } from '../constants/api';
 import axios from 'axios';
 
-export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'java', 'md', 'env'];
+export const SUPPORTED_FILE_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'html', 'css', 'scss', 'py', 'c', 'vue', 'java', 'md', 'env', 'rs'];
 // specifically for the error message
 const UNSUPPORTED_FILE_EXTENSIONS = [
 	'cpp', 'c++', 'cc', 'cp', 'cxx', 'h', 'h++', 'hh', 'hpp', 'hxx', 'inc', 'inl', 'ipp', 'tcc','tpp', // C++
 	'cs', 'cake', 'cshtml', 'csx', // C#
 	'r', 'rd', 'rsx', // R
 	'rb', 'ruby', // Ruby
-	'rs', // Rust
 	'ml', 'eliom', 'eliomi', 'ml4', 'mli', 'mll', 'mly', // OCaml
 	'go', 'swift', 'php',
 	'rlib', 'kt', 'kts', 'ktm', 'hs', 'plx', 'pl', 'pm', 'erl', 'hrl'
