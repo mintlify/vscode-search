@@ -73,7 +73,7 @@
 		"viewsWelcome": [
 			{
 				"view": "search",
-				"contents": "[🔎 Search (⌘ + M)](command:mintlify.searchbar)\nHave questions? Join our [community](https://discord.gg/6W7GuYuxra)"
+				"contents": "[🔎 Search (⌘M)](command:mintlify.searchbar)\nHave questions? Join our [community](https://discord.gg/6W7GuYuxra)"
 			}
 		],
 		"views": {
